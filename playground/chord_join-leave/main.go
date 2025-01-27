@@ -9,31 +9,31 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
-	"time"
+	"sync"
 )
 
-// Node stellt einen Knoten im DHT dar
+// Node represents a node in the distributed hash table (DHT)
 type Node struct {
-	ID          int               // Eindeutige ID des Knotens (basierend auf Hash)
-	Address     string            // Adresse des Knotens (IP und Port)
-	FingerTable []*Node           // Finger-Tabelle für Routing
-	Successor   *Node             // Nachfolger im Chord-Ring
-	Predecessor *Node             // Vorgänger im Chord-Ring
-	Data        map[string]string // Schlüssel-Wert-Daten des Knotens
+	ID          int               // Unique ID of the node (based on hash)
+	Address     string            // Address (host:port) of the node
+	FingerTable []*Node           // Finger table for routing
+	Successor   *Node             // Successor node in the Chord ring
+	Predecessor *Node             // Predecessor node in the Chord ring
+	Data        map[string]string // Key-value store for the node
+	mu          sync.Mutex        // Mutex for thread-safe operations
 }
 
-// Neue Knoteninstanz erstellen
+// NewNode creates a new node with a given ID and address
 func NewNode(id int, address string) *Node {
 	return &Node{
 		ID:          id,
 		Address:     address,
-		FingerTable: make([]*Node, 0), // Zu Beginn leer
+		FingerTable: make([]*Node, 0), // Initially empty
 		Data:        make(map[string]string),
 	}
 }
 
-// Hash-Funktion für Schlüssel
+// hashKey hashes the key to an integer ID
 func hashKey(key string) int {
 	hash := sha1.New()
 	hash.Write([]byte(key))
@@ -43,32 +43,43 @@ func hashKey(key string) int {
 	return int(hashInt[0])
 }
 
-// Initialisierung der Finger-Tabelle
+// Initialize the Finger Table for the node
 func (n *Node) InitFingerTable(allNodes []*Node) {
-	// Berechnung der Finger-Tabelle: Ein Finger zeigt auf den Knoten, der den nächstgelegenen größeren Hash-Wert hat.
-	for i := 0; i < len(allNodes); i++ {
-		finger := findSuccessor(allNodes, n.ID+int(1<<i)) // i ist bereits ein int
-		n.FingerTable = append(n.FingerTable, finger)
-	}
-}
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-// Sucht den Knoten, der für einen bestimmten Hash-Wert zuständig ist
-func findSuccessor(nodes []*Node, target int) *Node {
-	for _, node := range nodes {
-		if node.ID >= target {
-			return node
+	// Initialize the finger table by assigning nodes based on the ring
+	for _, node := range allNodes {
+		// Do not add the node itself to the finger table
+		if node.ID != n.ID && !contains(n.FingerTable, node) {
+			n.FingerTable = append(n.FingerTable, node)
 		}
 	}
-	return nodes[0] // Zum Startknoten zurückkehren, wenn kein größerer Knoten gefunden wird
+
+	// Update successor and predecessor if there are nodes in the finger table
+	if len(n.FingerTable) > 0 {
+		n.Successor = n.FingerTable[0]
+		n.Predecessor = n.FingerTable[len(n.FingerTable)-1]
+	}
 }
 
-// HTTP-Handler für /storage/<key> (PUT und GET)
+// contains checks if a node is already in the list of nodes (to avoid duplicates)
+func contains(nodes []*Node, node *Node) bool {
+	for _, n := range nodes {
+		if n.ID == node.ID {
+			return true
+		}
+	}
+	return false
+}
+
+// handleStorage handles PUT and GET requests for the storage (key-value store)
 func (n *Node) handleStorage(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Path[len("/storage/"):]
 
 	switch r.Method {
 	case "GET":
-		// Hole den Wert für den Schlüssel
+		// Get the value for the key
 		value, ok := n.Data[key]
 		if ok {
 			w.WriteHeader(http.StatusOK)
@@ -78,80 +89,136 @@ func (n *Node) handleStorage(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case "PUT":
-		// Lese den Wert aus dem Body der Anfrage (kein JSON, nur einfacher Text)
+		// Read the value from the request body
 		value := ""
 		if r.Body != nil {
 			defer r.Body.Close()
-			body, err := io.ReadAll(r.Body) // Liest den gesamten Body
+			body, err := io.ReadAll(r.Body) // Use io.ReadAll instead of ioutil.ReadAll
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			value = string(body) // Umwandlung von []byte zu string
+			value = string(body) // Convert []byte to string
 		}
 
-		// Setze den Wert im DHT
+		// Store the key-value pair
 		n.Data[key] = value
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// HTTP-Handler für /network (Liste aller Knoten im Netzwerk)
+// handleNetwork handles the /network endpoint, returning the known nodes
 func (n *Node) handleNetwork(w http.ResponseWriter, r *http.Request) {
-	// Gibt eine Liste aller bekannten Knoten zurück
-	json.NewEncoder(w).Encode(n.FingerTable)
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Create a list of nodes to return
+	network := []map[string]string{
+		{"ID": fmt.Sprintf("%d", n.ID), "Address": n.Address},
+	}
+
+	// Add the successor and predecessor to the list of known nodes
+	if n.Successor != nil {
+		network = append(network, map[string]string{"ID": fmt.Sprintf("%d", n.Successor.ID), "Address": n.Successor.Address})
+	}
+	if n.Predecessor != nil {
+		network = append(network, map[string]string{"ID": fmt.Sprintf("%d", n.Predecessor.ID), "Address": n.Predecessor.Address})
+	}
+
+	// Add all known nodes in the finger table
+	for _, finger := range n.FingerTable {
+		network = append(network, map[string]string{"ID": fmt.Sprintf("%d", finger.ID), "Address": finger.Address})
+	}
+
+	// Return the list as JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(network)
 }
 
-// Starten des HTTP-Servers für einen Knoten
+// joinNetwork adds a new node to the network by adding it to the finger tables
+func (n *Node) joinNetwork(newNode *Node) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Add the new node to the finger table only if not already present
+	if !contains(n.FingerTable, newNode) {
+		n.FingerTable = append(n.FingerTable, newNode)
+	}
+
+	// Update successor and predecessor relationships
+	newNode.Successor = n
+	n.Predecessor = newNode
+}
+
+// leaveNetwork removes the current node from the network
+func (n *Node) leaveNetwork() {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	// Remove the node from the finger tables of other nodes
+	for _, node := range n.FingerTable {
+		node.mu.Lock()
+		defer node.mu.Unlock()
+
+		// Remove the current node from the finger table of other nodes
+		var updatedFingerTable []*Node
+		for _, finger := range node.FingerTable {
+			if finger.ID != n.ID {
+				updatedFingerTable = append(updatedFingerTable, finger)
+			}
+		}
+		node.FingerTable = updatedFingerTable
+	}
+
+	// Update successor and predecessor
+	n.Successor = nil
+	n.Predecessor = nil
+}
+
+// startServer starts the HTTP server for a given node
 func startServer(n *Node) {
 	http.HandleFunc("/storage/", n.handleStorage)
 	http.HandleFunc("/network", n.handleNetwork)
+
+	http.HandleFunc("/join", func(w http.ResponseWriter, r *http.Request) {
+		// Handle join requests
+		address := r.URL.Query().Get("address")
+		if address == "" {
+			http.Error(w, "Address is required", http.StatusBadRequest)
+			return
+		}
+
+		// New node joins the network
+		newNode := NewNode(hashKey(address), address)
+		n.joinNetwork(newNode)
+		w.WriteHeader(http.StatusOK)
+	})
+
+	http.HandleFunc("/leave", func(w http.ResponseWriter, r *http.Request) {
+		// Handle leave requests
+		n.leaveNetwork()
+		w.WriteHeader(http.StatusOK)
+	})
+
 	log.Fatal(http.ListenAndServe(n.Address, nil))
 }
 
-// Test-Put-Anfrage an einen Knoten senden
-func testPut(key, value string, nodeAddress string) {
-	start := time.Now()
-	resp, err := http.Post(fmt.Sprintf("http://%s/storage/%s", nodeAddress, key), "text/plain", strings.NewReader(value))
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Printf("PUT %s took %v\n", key, time.Since(start))
-	resp.Body.Close()
-}
-
-// Test-Get-Anfrage an einen Knoten senden
-func testGet(key string, nodeAddress string) {
-	start := time.Now()
-	resp, err := http.Get(fmt.Sprintf("http://%s/storage/%s", nodeAddress, key))
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Printf("GET %s took %v\n", key, time.Since(start))
-	resp.Body.Close()
-}
-
-// Hauptfunktion für das Starten eines Knotens und des Systems
+// main function to run the DHT node and start the server
 func main() {
-	// Überprüfe, ob die Adresse als Argument übergeben wurde
+	// Check if address is provided as a command line argument
 	if len(os.Args) < 2 {
-		log.Fatal("Bitte eine Adresse im Format 'host:port' als Argument angeben")
+		log.Fatal("Please provide an address in the format 'host:port' as an argument")
 	}
-	// Das erste Argument ist die Adresse des Knotens (z.B. localhost:5000)
+
+	// The first argument is the node's address (e.g., localhost:5000)
 	address := os.Args[1]
 
-	// Initialisiere einen Knoten mit der angegebenen Adresse
+	// Create a new node with the given address
 	node := NewNode(hashKey(address), address)
 
-	// Initialisiere Finger-Tabelle für den Knoten (nur für einen Knoten in diesem Fall)
-	// Für nur einen Knoten ist die Finger-Tabelle leer (da er kein Nachbar hat)
-	node.InitFingerTable([]*Node{node})
-
-	// Starte den Knoten-HTTP-Server
+	// Start the HTTP server for the node
 	go startServer(node)
 
-	// Blockiere den Haupt-Thread, damit der Server weiterläuft
+	// Block the main thread to keep the server running
 	select {}
 }
