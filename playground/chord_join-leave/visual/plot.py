@@ -1,6 +1,8 @@
 import matplotlib
 matplotlib.use('Agg')  # Use a non-GUI backend
 
+import threading
+import time
 import os
 import requests
 import json
@@ -19,86 +21,67 @@ def hash_node(node):
 
 def build_chord_graph():
     """
-    Build a graph representation of the Chord ring, ensuring nodes are sorted
-    to avoid crossing connections.
+    Traverse the Chord ring starting from a known node (e.g., localhost:5000),
+    dynamically discover all nodes via successor links, and sort them by hash.
     """
     G = nx.DiGraph()
-    node_data = []
+    visited = set()  # Keep track of visited nodes to avoid infinite loops
+    nodes = []       # Store nodes and their hashes for sorting
+    start_node = "localhost:5000"  # Starting node (node 0)
 
-    # Step 1: Retrieve the list of nodes and their information
-    for port in range(5000, 5010):
-        try:
-            response = requests.get(f"http://localhost:{port}/network")
+    try:
+        # Start traversal from the known node
+        current_node = start_node
+        while current_node not in visited:
+            # Fetch information from the current node
+            response = requests.get(f"http://{current_node}/network")
             data = response.json()
-            current_node = f"localhost:{port}"
+
             successor = data["successor"]
             predecessor = data["predecessor"]
 
-            # Store node info along with its hash
-            node_data.append({
-                "id": current_node,
-                "successor": successor,
-                "predecessor": predecessor,
-                "hash": hash_node(current_node)
-            })
-        except (requests.exceptions.ConnectionError, requests.exceptions.JSONDecodeError) as e:
-            print(f"Error with node on port {port}: {e}")
-            continue
+            # Add the current node and its connections to the graph
+            G.add_node(current_node)
+            G.add_node(successor)
+            G.add_node(predecessor)
 
-    # Step 2: Sort nodes based on their hash values
-    node_data.sort(key=lambda x: x["hash"])
+            G.add_edge(current_node, successor)  # Connect to successor
+            G.add_edge(predecessor, current_node)  # Connect from predecessor
 
-    # Step 3: Add nodes and edges to the graph
-    for node in node_data:
-        current_node = node["id"]
-        successor = node["successor"]
+            # Add the node and its hash to the list for sorting
+            nodes.append({"id": current_node, "hash": hash_node(current_node)})
 
-        # Add nodes to the graph
-        G.add_node(current_node)
-        G.add_node(successor)
+            # Mark the current node as visited and move to the successor
+            visited.add(current_node)
+            current_node = successor
 
-        # Add directed edges for successor connections
-        G.add_edge(current_node, successor)
+        # Sort nodes by their hash values
+        nodes.sort(key=lambda x: x["hash"])
+
+        # Rebuild the graph using the sorted nodes
+        sorted_G = nx.DiGraph()
+        for i in range(len(nodes)):
+            current_node = nodes[i]["id"]
+            next_node = nodes[(i + 1) % len(nodes)]["id"]  # Circular connection
+            sorted_G.add_node(current_node)
+            sorted_G.add_edge(current_node, next_node)
+
+        return sorted_G
+
+    except (requests.exceptions.ConnectionError, requests.exceptions.JSONDecodeError) as e:
+        print(f"Error while traversing the ring: {e}")
 
     return G
 
+def generate_chord_plot(graph, output_path="static/graph.png"):
+    """
+    Generate the Chord ring plot and save it as an image.
+    """
+    pos = nx.circular_layout(graph)
 
-# Function to plot the Chord ring
-def plot_chord_ring(graph, output_path):
-    plt.figure(figsize=(10, 6))
-    pos = nx.circular_layout(graph)  # Circular layout for the ring
-    nx.draw(
-        graph,
-        pos,
-        with_labels=True,
-        node_color="skyblue",
-        edge_color="gray",
-        node_size=2000,
-        font_size=10,
-        font_weight="bold",
-    )
-    nx.draw_networkx_edge_labels(
-        graph,
-        pos,
-        edge_labels={(u, v): v for u, v in graph.edges},
-        font_color="black",
-    )
-    plt.savefig(output_path)
-    plt.close()
-
-# Flask route to serve the graph
-@app.route("/")
-def index():
-    G = build_chord_graph()
-
-    # Apply a circular layout
-    pos = nx.circular_layout(G)
-
-    # Plot the graph and save it as a static file
-    static_path = "static/graph.png"
     plt.figure(figsize=(10, 10))
     nx.draw(
-        G,
+        graph,
         pos,
         with_labels=True,
         node_color="skyblue",
@@ -109,19 +92,19 @@ def index():
         arrowsize=20,
     )
     plt.title("Chord Ring Visualization", fontsize=16)
-    plt.savefig(static_path)  # Save to file instead of displaying a GUI
+    plt.savefig(output_path)  # Save the plot to the specified path
     plt.close()
 
-    # Serve the saved plot in the HTML
-    return render_template("index.html", plot_url=f"/{static_path}")
-
+@app.route("/")
+def index():
+    # Regenerate the plot dynamically each time the page is requested
+    G = build_chord_graph()
+    generate_chord_plot(G)  # Save the updated plot
+    return render_template("index.html")
 
 @app.route("/static/graph.png")
 def serve_graph():
     response = make_response(send_file("static/graph.png"))
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
     return response
 
 
@@ -130,8 +113,17 @@ def serve_graph():
 def render_index():
     return render_template("index.html")
 
+def cyclebuild_of_the_plot():
+    G = build_chord_graph()
+    generate_chord_plot(G)  # Save the updated plot
+    threading.Timer(1, cyclebuild_of_the_plot).start()
+
 # Run the Flask app
 if __name__ == "__main__":
-    os.makedirs(app.config['STATIC_FOLDER'], exist_ok=True)
-    app.run(debug=True, port=8080)
+    # Generate the initial plot when the app starts
+    print("Generating initial Chord ring plot...")
+    cyclebuild_of_the_plot()
+
+    # Start the Flask app
+    app.run(host="0.0.0.0", port=8080, debug=True)
 
