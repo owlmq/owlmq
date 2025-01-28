@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chord Ring Visualization</title>
+    <script>
+        // Function to refresh the image every second
+        function refreshImage() {
+            const img = document.getElementById("chord-graph");
+            const timestamp = new Date().getTime(); // Add a unique timestamp to prevent caching
+            img.src = `/static/graph.png?timestamp=${timestamp}`;
+        }
+
+        // Refresh the image every 1 second
+        setInterval(refreshImage, 1000);
+    </script>
+</head>
+<body>
+    <h1>Chord Ring Visualization</h1>
+    <p>The visualization will update every second to reflect the current state of the Chord ring.</p>
+    <img id="chord-graph" src="/static/graph.png" alt="Chord Ring Visualization" style="width: 100%; max-width: 800px; height: auto;">
+</body>
+</html>
+

@@ -1,3 +1,5 @@
-module example.com/m
+module github.com/owldb/owldb/playground
 
 go 1.22.2
+
+require github.com/gorilla/mux v1.8.1
