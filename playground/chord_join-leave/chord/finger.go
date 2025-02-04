@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/owldb/owldb/playground/utils"
+	"github.com/owlmq/owlmq/playground/utils"
 )
 
 var (

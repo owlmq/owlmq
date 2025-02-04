@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/owldb/owldb/playground/chord"
-	"github.com/owldb/owldb/playground/utils"
-	"github.com/owldb/owldb/playground/web"
+	"github.com/owlmq/owlmq/playground/chord"
+	"github.com/owlmq/owlmq/playground/utils"
+	"github.com/owlmq/owlmq/playground/web"
 )
 
 func main() {
@@ -18,6 +18,12 @@ func main() {
 	hostname := os.Args[1]
 	//DEBUG
 	log.Printf("[NODEID:%s]: initializing\n", utils.GenerateSHA1(hostname))
+
+	//generate and print JOIN password to secure joining the ring
+	p, err := utils.GenerateSecurePassword(16)
+	if err != nil {
+	}
+	log.Printf("[NODEID:%s]: initial joinpass: '%s'\n", utils.GenerateSHA1(hostname), p)
 
 	//setting up context env
 	ctx := context.Background()

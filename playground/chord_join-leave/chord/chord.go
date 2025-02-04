@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/owldb/owldb/playground/chord/repository"
-	"github.com/owldb/owldb/playground/utils"
+	"github.com/owlmq/owlmq/playground/chord/repository"
+	"github.com/owlmq/owlmq/playground/utils"
 )
 
 func New(ctx *context.Context) Chord_layer {

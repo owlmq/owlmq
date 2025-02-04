@@ -107,6 +107,14 @@ def serve_graph():
     response = make_response(send_file("static/graph.png"))
     return response
 
+@app.route("/node-details/<node_id>")
+def node_details(node_id):
+    # # Return details about the specified node
+    # _ = build_chord_graph()
+    # if node_id in details:
+        # return jsonify(details[node_id])
+    # else:
+    return jsonify({"error": "Node not found"}), 404
 
 # Flask route to serve the HTML template
 @app.route("/index.html")

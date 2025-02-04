@@ -2,7 +2,7 @@
 
 # Configuration
 BASE_PORT=5000      # Starting port number
-NODE_COUNT=10       # Number of nodes to start
+NODE_COUNT=15       # Number of nodes to start
 HOSTNAME="localhost" # Hostname for nodes
 EXECUTABLE="go run ."  # Path to your Chord executable (update if needed)
 LOG_DIR="./logs"     # Directory for log files

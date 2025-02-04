@@ -1,4 +1,4 @@
-module github.com/owldb/owldb
+module github.com/owlmq/owlmq
 
 go 1.22.2
 

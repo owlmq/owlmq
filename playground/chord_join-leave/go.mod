@@ -1,4 +1,4 @@
-module github.com/owldb/owldb/playground
+module github.com/owlmq/owlmq/playground
 
 go 1.22.2
 

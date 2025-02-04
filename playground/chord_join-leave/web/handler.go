@@ -11,8 +11,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/owldb/owldb/playground/chord"
-	"github.com/owldb/owldb/playground/utils"
+	"github.com/owlmq/owlmq/playground/chord"
+	"github.com/owlmq/owlmq/playground/utils"
 )
 
 func New(ctx *context.Context, c chord.Chord_layer) Web_layer {
@@ -229,6 +229,7 @@ func (ws *WebServer) LeaveHandler(w http.ResponseWriter, r *http.Request) {
 
 	//fmt.Println("LEAVING")
 
+	//TODO this is insecure since an attacker could simply update the successor and predecessor to join the cluster
 	//notify successor that my predecessor is now his
 	requestURL := fmt.Sprintf("http://%s/predecessor", (*ws.ctx).Value("successor").(string))
 	req, err := http.NewRequest(http.MethodPut, requestURL, bytes.NewBuffer([]byte((*ws.ctx).Value("predecessor").(string))))
@@ -253,6 +254,8 @@ func (ws *WebServer) LeaveHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error executing http get request: %s\n", err)
 		return
 	}
+
+	//TODO we need to transfer the key-value pairs to the next node
 
 	//clear successor stack, predecessor, successor, fingerTable
 	cl := chord.New(ws.ctx)

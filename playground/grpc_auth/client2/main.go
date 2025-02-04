@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/owldb/owldb/proto/protobufs"
+	pb "github.com/owlmq/owlmq/proto/protobufs"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

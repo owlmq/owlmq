@@ -6,9 +6,9 @@ import (
 	"log"
 	"net"
 
-	"github.com/owldb/owldb/auth"
-	"github.com/owldb/owldb/interceptor"
-	pb "github.com/owldb/owldb/proto/protobufs"
+	"github.com/owlmq/owlmq/auth"
+	"github.com/owlmq/owlmq/interceptor"
+	pb "github.com/owlmq/owlmq/proto/protobufs"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
