@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/owlmq/owlmq/playground/chord"
-	"github.com/owlmq/owlmq/playground/utils"
-	"github.com/owlmq/owlmq/playground/web"
+	"github.com/owlmq/owlmq/chord"
+	"github.com/owlmq/owlmq/utils"
+	"github.com/owlmq/owlmq/web"
 )
 
 func main() {
@@ -20,10 +20,16 @@ func main() {
 	log.Printf("[NODEID:%s]: initializing\n", utils.GenerateSHA1(hostname))
 
 	//generate and print JOIN password to secure joining the ring
-	p, err := utils.GenerateSecurePassword(16)
+	jp, err := utils.GenerateSecurePassword(16)
 	if err != nil {
 	}
-	log.Printf("[NODEID:%s]: initial joinpass: '%s'\n", utils.GenerateSHA1(hostname), p)
+	log.Printf("[NODEID:%s]: initial join password: '%s'\n", utils.GenerateSHA1(hostname), jp)
+
+	//generate and print PLUGIN password to secure joining the ring
+	pp, err := utils.GenerateSecurePassword(16)
+	if err != nil {
+	}
+	log.Printf("[NODEID:%s]: plugin-connect password: '%s'\n", utils.GenerateSHA1(hostname), pp)
 
 	//setting up context env
 	ctx := context.Background()

@@ -11,8 +11,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/owlmq/owlmq/playground/chord"
-	"github.com/owlmq/owlmq/playground/utils"
+	"github.com/owlmq/owlmq/chord"
+	"github.com/owlmq/owlmq/utils"
 )
 
 func New(ctx *context.Context, c chord.Chord_layer) Web_layer {

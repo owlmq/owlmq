@@ -41,3 +41,37 @@ Ein weiterer vorteil ist dass die plazierung der knoten im chord ring nicht von 
 ### ausfallssicherheit (verbindung)
 
 um für ausfallssicherheit bei der verbindung zu sorgen könnte es sinn machen wenn während der verbindung regelmäßig überprüft wird ob wer der direkte nachfolger des knotens ist mit welchem man verbunden ist. fällt der knoten aus kann man versuchen sich mit dem nächsten zu verbinden
+
+### Plugins
+
+
+* using golang based plugins (like currently)
+
+
+
+* use plugins based on a grpc connection to the server
+    * pro: multi language, only need a start command + they need to expose an api if for example they provide an external api (for example for amqp, or rest)
+    * -> they need to "register" them self to the service so that it is aware which plugins are running.
+    * -> maybe all nodes should share the same plugins so that loadbalancing over the nodes is easyer
+
+### loadbalancing
+
+* maybe use envoy (if it supports loadbalancing of grpc)
+
+### Plugin amqp
+
+https://www.amqp.org/specification/1.0
+
+## Usage API
+
+```
+TODO
+```
+
+
+
+## Links
+https://pdos.csail.mit.edu/papers/ton:chord/paper-ton.pdf
+http://localhost:8080/
+https://github.com/owlmq/owlmq
+https://en.wikipedia.org/wiki/Multiversion_concurrency_control
