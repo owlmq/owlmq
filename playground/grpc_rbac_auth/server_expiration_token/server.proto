@@ -1,0 +1,23 @@
+service AuthService {
+    rpc RefreshToken(RefreshRequest) returns (RefreshResponse);
+    rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+message RefreshRequest {
+    string refresh_token = 1;
+}
+
+message RefreshResponse {
+    string access_token = 1;
+}
+
+message LoginRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+}
+

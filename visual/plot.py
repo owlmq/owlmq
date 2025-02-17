@@ -34,7 +34,7 @@ def build_chord_graph():
         current_node = start_node
         while current_node not in visited:
             # Fetch information from the current node
-            response = requests.get(f"http://{current_node}/network")
+            response = requests.get(f"http://{current_node}/node-info")
             data = response.json()
 
             successor = data["successor"]

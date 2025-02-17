@@ -1,0 +1,50 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+option go_package  = "/proto";
+package api_plugin;
+
+// This file holds the description of the outside api of owlmq
+enum Role {
+  ROLE_NOROLE = 0;
+  ROLE_USER = 1;
+  ROLE_NODE = 2;
+  ROLE_ADMIN = 3;
+}
+
+message RoleBasedAccessControl {
+  repeated Role allowed_roles = 1;
+  bool allow_unauthenticated = 2;
+}
+
+extend google.protobuf.MethodOptions {
+  optional RoleBasedAccessControl access_control = 90000;
+}
+
+service Cluster {
+  rpc MemberJoin() returns () {
+    option (components.rbac.v1.access_control) = {
+      allowed_roles: [ROLE_NODE]
+      allow_unauthenticated: false
+    };
+  };
+  rpc MemberLeave() returns ();
+  rpc MemberList() returns ();
+
+  rpc SuccessorGet() returns ();
+  rpc SuccessorUpdate() returns ();
+  rpc PredecessorGet() returns ();
+  rpc PredecessorUpdate() returns ();
+
+  rpc NodeInfo() returns ();
+}
+
+service Auth {
+  rpc UserRegister() returns ();
+  rpc UserDelete() returns ();
+  rpc UserList() returns ();
+}
+
+service KV {
+  rpc Get() returns ();
+  rpc Put() returns ();
+}

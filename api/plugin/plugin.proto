@@ -1,15 +1,16 @@
-import "google/protobuf/empty.proto";
-
 syntax = "proto3";
+import "google/protobuf/empty.proto";
+option go_package  = "/proto";
+package api_owlmq;
 
-package plugin;
+// This file holds the description that plugins need to implement in order to be able to be executed by owlmq
+
 
 service PluginService {
   rpc Connect(ConnectRequest) returns (ConnectResponse);
   rpc HealthCheck(google.protobuf.Empty) returns (stream google.protobuf.Empty);
 }
 
-//-------------------
 // Connect is called by a program/user that wants to connect the Plugin with the database system
 enum ConnectionStatus {
   ACCEPTED = 0;
@@ -22,13 +23,4 @@ message ConnectRequest {
 }
 message ConnectResponse {
   ConnectionStatus status = 1;
-}
-//-------------------
-// HealthCheck is called by the database to see if the plugin is still up and running
-message HealthCheckRequest {
-  string input = 1;
-}
-
-message HealthCheckResponse {
-  string output = 1;
 }

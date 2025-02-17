@@ -53,62 +53,19 @@ func (ws *WebServer) PutHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%v", string(requestData))
 }
 
-func (ws *WebServer) NetworkHandler(w http.ResponseWriter, r *http.Request) {
-	type NetworkInfo struct {
-		Successor   string   `json:"successor"`
-		Predecessor string   `json:"predecessor"`
-		KnownNodes  []string `json:"known_nodes"`
-	}
-
-	// Retrieve successor and predecessor from context
-	successor := (*ws.ctx).Value("successor").(string)
-	predecessor := (*ws.ctx).Value("predecessor").(string)
-
-	// Retrieve known nodes from the FingerTable
-	ft := ws.chord_layer.GetFingerTable()
-	nodes := []string{}
-	for _, entry := range ft.Entries {
-		nodes = append(nodes, entry.NodeName)
-	}
-
-	// Remove duplicates
-	set := make(map[string]struct{})
-	for _, node := range nodes {
-		set[node] = struct{}{}
-	}
-	knownNodes := make([]string, 0, len(set))
-	for node := range set {
-		knownNodes = append(knownNodes, node)
-	}
-
-	// Create the response object
-	response := NetworkInfo{
-		Successor:   successor,
-		Predecessor: predecessor,
-		KnownNodes:  knownNodes,
-	}
-
-	// Encode response to JSON and send it
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Error encoding response to JSON", http.StatusInternalServerError)
-		log.Printf("Error encoding response: %s", err.Error())
-	}
-}
-
 func (ws *WebServer) NodeInfoHandler(w http.ResponseWriter, r *http.Request) {
 	type NodeInfo struct {
-		Node_hash string `json:"node_hash"`
-		Successor string `json:"successor"`
-		//Predecessor string   `json:"predecessor"` //TODO remove predecessor not in the task api only debugging
-		Others []string `json:"others"`
+		Node_hash   string   `json:"node_hash"`
+		Successor   string   `json:"successor"`
+		Predecessor string   `json:"predecessor"`
+		Others      []string `json:"others"`
 	}
 
 	nf := NodeInfo{
-		Node_hash: utils.GenerateSHA1((*ws.ctx).Value("hostname").(string)),
-		Successor: (*ws.ctx).Value("successor").(string),
-		//Predecessor: (*ws.ctx).Value("predecessor").(string),
-		Others: ws.chord_layer.ShowFingerTable(),
+		Node_hash:   utils.GenerateSHA1((*ws.ctx).Value("hostname").(string)),
+		Successor:   (*ws.ctx).Value("successor").(string),
+		Predecessor: (*ws.ctx).Value("predecessor").(string),
+		Others:      ws.chord_layer.ShowFingerTable(),
 	}
 
 	bs, err := json.MarshalIndent(nf, "", "    ")
@@ -277,7 +234,6 @@ func (ws *WebServer) NewWebserver(ctx *context.Context) *mux.Router {
 	r.HandleFunc("/leave", ws.LeaveHandler).Methods("POST")
 
 	//info handlers
-	r.HandleFunc("/network", ws.NetworkHandler).Methods("GET")
 	r.HandleFunc("/node-info", ws.NodeInfoHandler).Methods("GET")
 	r.HandleFunc("/predecessor", ws.PredecessorHandler).Methods("GET")
 	r.HandleFunc("/predecessor", ws.UpdatePredecessorHandler).Methods("PUT")

@@ -16,20 +16,10 @@ func main() {
 		log.Fatal("Wrong usage of command. eg. ./src localhost:9000")
 	}
 	hostname := os.Args[1]
-	//DEBUG
 	log.Printf("[NODEID:%s]: initializing\n", utils.GenerateSHA1(hostname))
 
-	//generate and print JOIN password to secure joining the ring
-	jp, err := utils.GenerateSecurePassword(16)
-	if err != nil {
-	}
-	log.Printf("[NODEID:%s]: initial join password: '%s'\n", utils.GenerateSHA1(hostname), jp)
-
-	//generate and print PLUGIN password to secure joining the ring
-	pp, err := utils.GenerateSecurePassword(16)
-	if err != nil {
-	}
-	log.Printf("[NODEID:%s]: plugin-connect password: '%s'\n", utils.GenerateSHA1(hostname), pp)
+	//generate initial passwords for nodes joining and passwords connecting
+	generateInitialPasswords(hostname)
 
 	//setting up context env
 	ctx := context.Background()
@@ -50,4 +40,19 @@ func main() {
 
 	log.Printf("[NODEID:%s]: now reachable on %s\n", utils.GenerateSHA1(hostname), hostname)
 	log.Fatal(http.ListenAndServe(hostname, web.NewWebserver(&ctx)))
+}
+
+func generateInitialPasswords(hostname string) {
+	//generate and print JOIN password to secure joining the ring
+	jp, err := utils.GenerateSecurePassword(16)
+	if err != nil {
+	}
+	log.Printf("[NODEID:%s]: initial join password: '%s'\n", utils.GenerateSHA1(hostname), jp)
+
+	//generate and print PLUGIN password to secure joining the ring
+	pp, err := utils.GenerateSecurePassword(16)
+	if err != nil {
+	}
+	log.Printf("[NODEID:%s]: plugin-connect password: '%s'\n", utils.GenerateSHA1(hostname), pp)
+
 }
