@@ -8,7 +8,6 @@ import (
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/chord"
 	"github.com/owlmq/owlmq/config"
-	"github.com/owlmq/owlmq/crypto"
 	"github.com/owlmq/owlmq/storage"
 	"github.com/owlmq/owlmq/web"
 	"google.golang.org/grpc"
@@ -21,6 +20,7 @@ func main() {
 	}
 
 	//setting up config
+	//TODO make config.Config to a singelton
 	c := config.New(os.Args[1])
 
 	log.Printf("[NODEID:%s]: initializing\n", c.NodeID)
@@ -31,15 +31,18 @@ func main() {
 		panic(err)
 	}
 	cl := chord.New(sl)
-	//TODO
 
+	startServer(c, cl)
+}
+
+func startServer(c *config.Config, cl *chord.Chord) {
 	server := grpc.NewServer()
-	kvServer := web.NewOwlmqServer()
+	kvServer := web.NewOwlmqServer(cl)
 	pb.RegisterOwlmqServer(server, kvServer)
 	reflection.Register(server)
 
-	log.Printf("[NODEID:%s]: now reachable on %s\n", crypto.GenerateSHA1(hostname), hostname)
-	listener, err := net.Listen("tcp", hostname)
+	log.Printf("[NODEID:%s]: now reachable on %s\n", c.NodeID, c.Hostname)
+	listener, err := net.Listen("tcp", c.Hostname)
 	if err != nil {
 		panic(err)
 	}

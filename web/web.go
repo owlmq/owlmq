@@ -4,16 +4,17 @@ import (
 	"sync"
 
 	pb "github.com/owlmq/owlmq/api/owlmq"
+	"github.com/owlmq/owlmq/chord"
 )
 
 type OwlmqServer struct {
 	pb.UnimplementedOwlmqServer
-	store map[string]string
-	mu    sync.RWMutex
+	chordLayer *chord.Chord
+	mu         sync.RWMutex
 }
 
-func NewOwlmqServer() *OwlmqServer {
+func NewOwlmqServer(cl *chord.Chord) *OwlmqServer {
 	return &OwlmqServer{
-		store: make(map[string]string),
+		chordLayer: cl,
 	}
 }

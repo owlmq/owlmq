@@ -19,14 +19,28 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Owlmq_Get_FullMethodName = "/api_owlmq.Owlmq/Get"
-	Owlmq_Put_FullMethodName = "/api_owlmq.Owlmq/Put"
+	Owlmq_FindSuccessor_FullMethodName = "/api_owlmq.Owlmq/FindSuccessor"
+	Owlmq_Get_FullMethodName           = "/api_owlmq.Owlmq/Get"
+	Owlmq_Put_FullMethodName           = "/api_owlmq.Owlmq/Put"
 )
 
 // OwlmqClient is the client API for Owlmq service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OwlmqClient interface {
+	// ##################
+	// ###   cluster  ###
+	// ##################
+	// rpc NodeJoin() returns () {
+	// option (components.rbac.v1.access_control) = {
+	// allowed_roles: [ROLE_NODE]
+	// allow_unauthenticated: false
+	// };
+	// };
+	// rpc NodeJoin() returns ();
+	// rpc NodeLeave() returns ();
+	// rpc NodeList() returns ();
+	FindSuccessor(ctx context.Context, in *FindSuccessorRequest, opts ...grpc.CallOption) (*FindSuccessorResponse, error)
 	// ##############################
 	// ###    key-value store     ###
 	// ##############################
@@ -40,6 +54,16 @@ type owlmqClient struct {
 
 func NewOwlmqClient(cc grpc.ClientConnInterface) OwlmqClient {
 	return &owlmqClient{cc}
+}
+
+func (c *owlmqClient) FindSuccessor(ctx context.Context, in *FindSuccessorRequest, opts ...grpc.CallOption) (*FindSuccessorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FindSuccessorResponse)
+	err := c.cc.Invoke(ctx, Owlmq_FindSuccessor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *owlmqClient) Get(ctx context.Context, in *KV_GetRequest, opts ...grpc.CallOption) (*KV_GetResponse, error) {
@@ -66,6 +90,19 @@ func (c *owlmqClient) Put(ctx context.Context, in *KV_PutRequest, opts ...grpc.C
 // All implementations must embed UnimplementedOwlmqServer
 // for forward compatibility.
 type OwlmqServer interface {
+	// ##################
+	// ###   cluster  ###
+	// ##################
+	// rpc NodeJoin() returns () {
+	// option (components.rbac.v1.access_control) = {
+	// allowed_roles: [ROLE_NODE]
+	// allow_unauthenticated: false
+	// };
+	// };
+	// rpc NodeJoin() returns ();
+	// rpc NodeLeave() returns ();
+	// rpc NodeList() returns ();
+	FindSuccessor(context.Context, *FindSuccessorRequest) (*FindSuccessorResponse, error)
 	// ##############################
 	// ###    key-value store     ###
 	// ##############################
@@ -81,6 +118,9 @@ type OwlmqServer interface {
 // pointer dereference when methods are called.
 type UnimplementedOwlmqServer struct{}
 
+func (UnimplementedOwlmqServer) FindSuccessor(context.Context, *FindSuccessorRequest) (*FindSuccessorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindSuccessor not implemented")
+}
 func (UnimplementedOwlmqServer) Get(context.Context, *KV_GetRequest) (*KV_GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
@@ -106,6 +146,24 @@ func RegisterOwlmqServer(s grpc.ServiceRegistrar, srv OwlmqServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Owlmq_ServiceDesc, srv)
+}
+
+func _Owlmq_FindSuccessor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindSuccessorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).FindSuccessor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_FindSuccessor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).FindSuccessor(ctx, req.(*FindSuccessorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Owlmq_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -151,6 +209,10 @@ var Owlmq_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api_owlmq.Owlmq",
 	HandlerType: (*OwlmqServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "FindSuccessor",
+			Handler:    _Owlmq_FindSuccessor_Handler,
+		},
 		{
 			MethodName: "Get",
 			Handler:    _Owlmq_Get_Handler,

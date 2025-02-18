@@ -24,15 +24,16 @@ service Owlmq {
   //##################
   //###   cluster  ###
   //##################
-  //rpc MemberJoin() returns () {
+  //rpc NodeJoin() returns () {
     //option (components.rbac.v1.access_control) = {
       //allowed_roles: [ROLE_NODE]
       //allow_unauthenticated: false
     //};
   //};
-  //rpc MemberJoin() returns ();
-  //rpc MemberLeave() returns ();
-  //rpc MemberList() returns ();
+  //rpc NodeJoin() returns ();
+  //rpc NodeLeave() returns ();
+  //rpc NodeList() returns ();
+  rpc FindSuccessor(FindSuccessorRequest) returns (FindSuccessorResponse);
 
   //rpc SuccessorGet() returns ();
   //rpc SuccessorUpdate() returns ();
@@ -55,6 +56,21 @@ service Owlmq {
   rpc Put(KV_PutRequest) returns (KV_PutResponse);
 }
 
+//##################
+//###   cluster  ###
+//##################
+
+message FindSuccessorRequest {
+  string address = 1;
+}
+
+message FindSuccessorResponse {
+  string address = 1;
+}
+
+//##############################
+//###    key-value store     ###
+//##############################
 enum KV_STATUS {
   SUCCESS = 0;
   FAILURE = 1;
