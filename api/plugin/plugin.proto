@@ -1,7 +1,7 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
-option go_package  = "/proto";
-package api_owlmq;
+option go_package  = "/plugin";
+package api_plugin;
 
 // This file holds the description that plugins need to implement in order to be able to be executed by owlmq
 

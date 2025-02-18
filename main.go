@@ -1,58 +1,49 @@
 package main
 
 import (
-	"context"
 	"log"
-	"net/http"
+	"net"
 	"os"
 
+	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/chord"
-	"github.com/owlmq/owlmq/utils"
+	"github.com/owlmq/owlmq/config"
+	"github.com/owlmq/owlmq/crypto"
+	"github.com/owlmq/owlmq/storage"
 	"github.com/owlmq/owlmq/web"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
 	if len(os.Args) != 2 {
 		log.Fatal("Wrong usage of command. eg. ./src localhost:9000")
 	}
-	hostname := os.Args[1]
-	log.Printf("[NODEID:%s]: initializing\n", utils.GenerateSHA1(hostname))
 
-	//generate initial passwords for nodes joining and passwords connecting
-	generateInitialPasswords(hostname)
+	//setting up config
+	c := config.New(os.Args[1])
 
-	//setting up context env
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "hostname", hostname)
-	ctx = context.WithValue(ctx, "nodeID", utils.GenerateSHA1(hostname))
-	ctx = context.WithValue(ctx, "predecessor", "")
-	ctx = context.WithValue(ctx, "successor", "")
+	log.Printf("[NODEID:%s]: initializing\n", c.NodeID)
 
-	//init chord layer with creation of the fingertable
-	cl := chord.New(&ctx)
-
-	//init fingertable and start the updater
-	ctx = context.WithValue(ctx, "successor", cl.FindSuccessor(hostname, hostname))
-	cl.GetFingerTable().StartEntryUpdater(&ctx)
-
-	//create web layer
-	web := web.New(&ctx, cl)
-
-	log.Printf("[NODEID:%s]: now reachable on %s\n", utils.GenerateSHA1(hostname), hostname)
-	log.Fatal(http.ListenAndServe(hostname, web.NewWebserver(&ctx)))
-}
-
-func generateInitialPasswords(hostname string) {
-	//generate and print JOIN password to secure joining the ring
-	jp, err := utils.GenerateSecurePassword(16)
+	//init layers
+	sl, err := storage.New(storage.InMemory)
 	if err != nil {
+		panic(err)
 	}
-	log.Printf("[NODEID:%s]: initial join password: '%s'\n", utils.GenerateSHA1(hostname), jp)
+	cl := chord.New(sl)
+	//TODO
 
-	//generate and print PLUGIN password to secure joining the ring
-	pp, err := utils.GenerateSecurePassword(16)
+	server := grpc.NewServer()
+	kvServer := web.NewOwlmqServer()
+	pb.RegisterOwlmqServer(server, kvServer)
+	reflection.Register(server)
+
+	log.Printf("[NODEID:%s]: now reachable on %s\n", crypto.GenerateSHA1(hostname), hostname)
+	listener, err := net.Listen("tcp", hostname)
 	if err != nil {
+		panic(err)
 	}
-	log.Printf("[NODEID:%s]: plugin-connect password: '%s'\n", utils.GenerateSHA1(hostname), pp)
-
+	if err := server.Serve(listener); err != nil {
+		panic(err)
+	}
 }

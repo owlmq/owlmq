@@ -1,10 +1,8 @@
-package utils
+package crypto
 
 import (
-	"crypto/rand"
 	"crypto/sha1"
 	"fmt"
-	"math/big"
 )
 
 func GenerateSHA1(str string) string {
@@ -37,19 +35,4 @@ func IsKeyInRange(key string, s string, p string) bool {
 	}
 	return false
 
-}
-
-func GenerateSecurePassword(length int) (string, error) {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	password := make([]byte, length)
-	charsetLength := big.NewInt(int64(len(charset)))
-	for i := range password {
-		index, err := rand.Int(rand.Reader, charsetLength)
-		if err != nil {
-			return "", fmt.Errorf("error generating random index: %v", err)
-		}
-		password[i] = charset[index.Int64()]
-	}
-
-	return string(password), nil
 }
