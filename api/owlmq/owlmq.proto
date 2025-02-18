@@ -61,7 +61,7 @@ service Owlmq {
 //##################
 
 message FindSuccessorRequest {
-  string address = 1;
+  bytes hash = 1;
 }
 
 message FindSuccessorResponse {

@@ -17,11 +17,13 @@ func (c *Chord) Put(key string, value string) error {
 	c.storage.Put(key, value)
 	return nil
 }
+
 func (c *Chord) Get(key string) (string, error) {
 	//TODO check if i am the correct node
 	value, err := c.storage.Get(key)
 	return value, err
 }
-func (c *Chord) FindSuccessor() {
 
+func (c *Chord) FindSuccessor() {
+	panic("unimplemented")
 }
