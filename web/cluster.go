@@ -12,6 +12,16 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+func (s *OwlmqServer) NodeList(ctx context.Context, req *pb.NodeListRequest) (*pb.NodeListResponse, error) {
+
+	return &pb.NodeListResponse{
+		Successor:   config.GetInstance().Successor,
+		Predecessor: config.GetInstance().Successor,
+		KnownNodes:  config.GetKnownNodes(),
+	}, nil
+}
+
+// TODO this needs to be well tested
 func (s *OwlmqServer) FindSuccessor(ctx context.Context, req *pb.FindSuccessorRequest) (*pb.FindSuccessorResponse, error) {
 	//TODO do i need a mutex here
 	conf := config.GetInstance()
