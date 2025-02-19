@@ -19,10 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Owlmq_NodeList_FullMethodName      = "/api_owlmq.Owlmq/NodeList"
-	Owlmq_FindSuccessor_FullMethodName = "/api_owlmq.Owlmq/FindSuccessor"
-	Owlmq_Get_FullMethodName           = "/api_owlmq.Owlmq/Get"
-	Owlmq_Put_FullMethodName           = "/api_owlmq.Owlmq/Put"
+	Owlmq_NodeJoin_FullMethodName       = "/api_owlmq.Owlmq/NodeJoin"
+	Owlmq_NodeList_FullMethodName       = "/api_owlmq.Owlmq/NodeList"
+	Owlmq_FindSuccessor_FullMethodName  = "/api_owlmq.Owlmq/FindSuccessor"
+	Owlmq_GetPredecessor_FullMethodName = "/api_owlmq.Owlmq/GetPredecessor"
+	Owlmq_SetPredecessor_FullMethodName = "/api_owlmq.Owlmq/SetPredecessor"
+	Owlmq_SetSuccessor_FullMethodName   = "/api_owlmq.Owlmq/SetSuccessor"
+	Owlmq_Get_FullMethodName            = "/api_owlmq.Owlmq/Get"
+	Owlmq_Put_FullMethodName            = "/api_owlmq.Owlmq/Put"
 )
 
 // OwlmqClient is the client API for Owlmq service.
@@ -38,10 +42,13 @@ type OwlmqClient interface {
 	// allow_unauthenticated: false
 	// };
 	// };
-	// rpc NodeJoin() returns ();
+	NodeJoin(ctx context.Context, in *NodeJoinRequest, opts ...grpc.CallOption) (*NodeJoinResponse, error)
 	// rpc NodeLeave() returns ();
 	NodeList(ctx context.Context, in *NodeListRequest, opts ...grpc.CallOption) (*NodeListResponse, error)
 	FindSuccessor(ctx context.Context, in *FindSuccessorRequest, opts ...grpc.CallOption) (*FindSuccessorResponse, error)
+	GetPredecessor(ctx context.Context, in *GetPredecessorRequest, opts ...grpc.CallOption) (*GetPredecessorResponse, error)
+	SetPredecessor(ctx context.Context, in *SetPredecessorRequest, opts ...grpc.CallOption) (*SetPredecessorResponse, error)
+	SetSuccessor(ctx context.Context, in *SetSuccessorRequest, opts ...grpc.CallOption) (*SetSuccessorResponse, error)
 	// ##############################
 	// ###    key-value store     ###
 	// ##############################
@@ -55,6 +62,16 @@ type owlmqClient struct {
 
 func NewOwlmqClient(cc grpc.ClientConnInterface) OwlmqClient {
 	return &owlmqClient{cc}
+}
+
+func (c *owlmqClient) NodeJoin(ctx context.Context, in *NodeJoinRequest, opts ...grpc.CallOption) (*NodeJoinResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeJoinResponse)
+	err := c.cc.Invoke(ctx, Owlmq_NodeJoin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *owlmqClient) NodeList(ctx context.Context, in *NodeListRequest, opts ...grpc.CallOption) (*NodeListResponse, error) {
@@ -71,6 +88,36 @@ func (c *owlmqClient) FindSuccessor(ctx context.Context, in *FindSuccessorReques
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindSuccessorResponse)
 	err := c.cc.Invoke(ctx, Owlmq_FindSuccessor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *owlmqClient) GetPredecessor(ctx context.Context, in *GetPredecessorRequest, opts ...grpc.CallOption) (*GetPredecessorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPredecessorResponse)
+	err := c.cc.Invoke(ctx, Owlmq_GetPredecessor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *owlmqClient) SetPredecessor(ctx context.Context, in *SetPredecessorRequest, opts ...grpc.CallOption) (*SetPredecessorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetPredecessorResponse)
+	err := c.cc.Invoke(ctx, Owlmq_SetPredecessor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *owlmqClient) SetSuccessor(ctx context.Context, in *SetSuccessorRequest, opts ...grpc.CallOption) (*SetSuccessorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetSuccessorResponse)
+	err := c.cc.Invoke(ctx, Owlmq_SetSuccessor_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,10 +157,13 @@ type OwlmqServer interface {
 	// allow_unauthenticated: false
 	// };
 	// };
-	// rpc NodeJoin() returns ();
+	NodeJoin(context.Context, *NodeJoinRequest) (*NodeJoinResponse, error)
 	// rpc NodeLeave() returns ();
 	NodeList(context.Context, *NodeListRequest) (*NodeListResponse, error)
 	FindSuccessor(context.Context, *FindSuccessorRequest) (*FindSuccessorResponse, error)
+	GetPredecessor(context.Context, *GetPredecessorRequest) (*GetPredecessorResponse, error)
+	SetPredecessor(context.Context, *SetPredecessorRequest) (*SetPredecessorResponse, error)
+	SetSuccessor(context.Context, *SetSuccessorRequest) (*SetSuccessorResponse, error)
 	// ##############################
 	// ###    key-value store     ###
 	// ##############################
@@ -129,11 +179,23 @@ type OwlmqServer interface {
 // pointer dereference when methods are called.
 type UnimplementedOwlmqServer struct{}
 
+func (UnimplementedOwlmqServer) NodeJoin(context.Context, *NodeJoinRequest) (*NodeJoinResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NodeJoin not implemented")
+}
 func (UnimplementedOwlmqServer) NodeList(context.Context, *NodeListRequest) (*NodeListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NodeList not implemented")
 }
 func (UnimplementedOwlmqServer) FindSuccessor(context.Context, *FindSuccessorRequest) (*FindSuccessorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindSuccessor not implemented")
+}
+func (UnimplementedOwlmqServer) GetPredecessor(context.Context, *GetPredecessorRequest) (*GetPredecessorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPredecessor not implemented")
+}
+func (UnimplementedOwlmqServer) SetPredecessor(context.Context, *SetPredecessorRequest) (*SetPredecessorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetPredecessor not implemented")
+}
+func (UnimplementedOwlmqServer) SetSuccessor(context.Context, *SetSuccessorRequest) (*SetSuccessorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetSuccessor not implemented")
 }
 func (UnimplementedOwlmqServer) Get(context.Context, *KV_GetRequest) (*KV_GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
@@ -160,6 +222,24 @@ func RegisterOwlmqServer(s grpc.ServiceRegistrar, srv OwlmqServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Owlmq_ServiceDesc, srv)
+}
+
+func _Owlmq_NodeJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeJoinRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).NodeJoin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_NodeJoin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).NodeJoin(ctx, req.(*NodeJoinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Owlmq_NodeList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -194,6 +274,60 @@ func _Owlmq_FindSuccessor_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OwlmqServer).FindSuccessor(ctx, req.(*FindSuccessorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Owlmq_GetPredecessor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPredecessorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).GetPredecessor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_GetPredecessor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).GetPredecessor(ctx, req.(*GetPredecessorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Owlmq_SetPredecessor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetPredecessorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).SetPredecessor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_SetPredecessor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).SetPredecessor(ctx, req.(*SetPredecessorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Owlmq_SetSuccessor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSuccessorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).SetSuccessor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_SetSuccessor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).SetSuccessor(ctx, req.(*SetSuccessorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -242,12 +376,28 @@ var Owlmq_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*OwlmqServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "NodeJoin",
+			Handler:    _Owlmq_NodeJoin_Handler,
+		},
+		{
 			MethodName: "NodeList",
 			Handler:    _Owlmq_NodeList_Handler,
 		},
 		{
 			MethodName: "FindSuccessor",
 			Handler:    _Owlmq_FindSuccessor_Handler,
+		},
+		{
+			MethodName: "GetPredecessor",
+			Handler:    _Owlmq_GetPredecessor_Handler,
+		},
+		{
+			MethodName: "SetPredecessor",
+			Handler:    _Owlmq_SetPredecessor_Handler,
+		},
+		{
+			MethodName: "SetSuccessor",
+			Handler:    _Owlmq_SetSuccessor_Handler,
 		},
 		{
 			MethodName: "Get",

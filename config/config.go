@@ -26,9 +26,8 @@ var once sync.Once
 func New(hostname string) *Config {
 	once.Do(func() {
 		instance = &Config{
-			Hostname: hostname,
-			NodeID:   crypto.HashKey(hostname),
-			//init Predecessor and Successor with itself
+			Hostname:    hostname,
+			NodeID:      crypto.HashKey(hostname),
 			Predecessor: hostname,
 			Successor:   hostname,
 
@@ -49,4 +48,12 @@ func GetKnownNodes() []string {
 	ret := []string{instance.Successor, instance.Predecessor}
 	ret = append(ret, instance.FingerTable...)
 	return ret
+}
+
+func SetSuccessor(address string) {
+	instance.Successor = address
+}
+
+func SetPredecessor(address string) {
+	instance.Predecessor = address
 }

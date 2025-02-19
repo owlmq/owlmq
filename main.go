@@ -20,7 +20,6 @@ func main() {
 	}
 
 	//setting up config
-	//TODO make config.Config to a singelton
 	c := config.New(os.Args[1])
 
 	log.Printf("[NODEID:%s]: initializing\n", c.NodeID)
@@ -37,9 +36,12 @@ func main() {
 
 func startServer(c *config.Config, cl *chord.Chord) {
 	server := grpc.NewServer()
-	kvServer := web.NewOwlmqServer(cl)
-	pb.RegisterOwlmqServer(server, kvServer)
+	owlmqServer := web.NewOwlmqServer(cl)
+	pb.RegisterOwlmqServer(server, owlmqServer)
 	reflection.Register(server)
+
+	// stabilize in the Background
+	go owlmqServer.Stabilize()
 
 	log.Printf("[NODEID:%s]: now reachable on %s\n", c.NodeID, c.Hostname)
 	listener, err := net.Listen("tcp", c.Hostname)

@@ -30,17 +30,14 @@ service Owlmq {
       //allow_unauthenticated: false
     //};
   //};
-  //rpc NodeJoin() returns ();
+  rpc NodeJoin(NodeJoinRequest) returns (NodeJoinResponse);
   //rpc NodeLeave() returns ();
   rpc NodeList(NodeListRequest) returns (NodeListResponse);
   rpc FindSuccessor(FindSuccessorRequest) returns (FindSuccessorResponse);
 
-  //rpc SuccessorGet() returns ();
-  //rpc SuccessorUpdate() returns ();
-  //rpc PredecessorGet() returns ();
-  //rpc PredecessorUpdate() returns ();
-
-  //rpc NodeInfo() returns ();
+  rpc GetPredecessor(GetPredecessorRequest) returns (GetPredecessorResponse);
+  rpc SetPredecessor(SetPredecessorRequest) returns (SetPredecessorResponse);
+  rpc SetSuccessor(SetSuccessorRequest) returns (SetSuccessorResponse);
 
   //###################
   //###    auth     ###
@@ -59,6 +56,15 @@ service Owlmq {
 //##################
 //###   cluster  ###
 //##################
+enum NODEJOIN_STATUS {
+  NJ_SUCCESS = 0;
+  NJ_FAILURE = 1;
+}
+message NodeJoinRequest { string address = 1; }
+message NodeJoinResponse {
+  NODEJOIN_STATUS status = 1;
+  string errorMsg = 2;
+}
 
 message NodeListRequest {}
 
@@ -68,20 +74,24 @@ message NodeListResponse {
   repeated string knownNodes = 3;
 }
 
-message FindSuccessorRequest {
-  bytes hash = 1;
-}
+message FindSuccessorRequest { bytes hash = 1; }
+message FindSuccessorResponse { string address = 1; }
 
-message FindSuccessorResponse {
-  string address = 1;
-}
+message GetPredecessorRequest {}
+message GetPredecessorResponse { string address = 1; }
+
+message SetPredecessorRequest { string address = 1; }
+message SetPredecessorResponse {}
+
+message SetSuccessorRequest { string address = 1; }
+message SetSuccessorResponse {}
 
 //##############################
 //###    key-value store     ###
 //##############################
 enum KV_STATUS {
-  SUCCESS = 0;
-  FAILURE = 1;
+  KV_SUCCESS = 0;
+  KV_FAILURE = 1;
 }
 
 message KV_GetRequest {
@@ -91,7 +101,7 @@ message KV_GetRequest {
 message KV_GetResponse {
   KV_STATUS status = 1;
   string value = 2;
-  string error = 3;
+  string errorMsg = 3;
 }
 
 message KV_PutRequest {
@@ -101,5 +111,5 @@ message KV_PutRequest {
 
 message KV_PutResponse {
   KV_STATUS status = 1;
-  string error = 2;
+  string errorMsg = 2;
 }

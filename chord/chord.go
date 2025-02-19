@@ -23,7 +23,3 @@ func (c *Chord) Get(key string) (string, error) {
 	value, err := c.storage.Get(key)
 	return value, err
 }
-
-func (c *Chord) FindSuccessor() {
-	panic("unimplemented")
-}
