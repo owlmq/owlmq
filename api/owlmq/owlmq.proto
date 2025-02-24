@@ -35,7 +35,9 @@ service Owlmq {
   rpc NodeList(NodeListRequest) returns (NodeListResponse);
   rpc FindSuccessor(FindSuccessorRequest) returns (FindSuccessorResponse);
 
+  rpc Ping(PingRequest) returns (PingResponse);
   rpc GetPredecessor(GetPredecessorRequest) returns (GetPredecessorResponse);
+  rpc GetSuccessor(GetSuccessorRequest) returns (GetSuccessorResponse);
   rpc SetPredecessor(SetPredecessorRequest) returns (SetPredecessorResponse);
   rpc SetSuccessor(SetSuccessorRequest) returns (SetSuccessorResponse);
 
@@ -56,6 +58,9 @@ service Owlmq {
 //##################
 //###   cluster  ###
 //##################
+message PingRequest {}
+message PingResponse {}
+
 enum NODEJOIN_STATUS {
   NJ_SUCCESS = 0;
   NJ_FAILURE = 1;
@@ -79,6 +84,9 @@ message FindSuccessorResponse { string address = 1; }
 
 message GetPredecessorRequest {}
 message GetPredecessorResponse { string address = 1; }
+
+message GetSuccessorRequest {}
+message GetSuccessorResponse { string address = 1; }
 
 message SetPredecessorRequest { string address = 1; }
 message SetPredecessorResponse {}

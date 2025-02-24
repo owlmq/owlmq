@@ -3,8 +3,7 @@ package chord
 import "github.com/owlmq/owlmq/storage"
 
 type Chord struct {
-	storage     storage.StorageLayer
-	fingertable []*FingerEntry
+	storage storage.StorageLayer
 }
 
 func New(s storage.StorageLayer) *Chord {

@@ -2,7 +2,7 @@
 
 # Configuration
 BASE_PORT=9000      # Starting port number
-NODE_COUNT=3       # Number of nodes to start
+NODE_COUNT=4      # Number of nodes to start
 HOSTNAME="localhost" # Hostname for nodes
 SERVER_DIR="../../"
 EXECUTABLE="./owlmq_server"  # Path to your Chord executable (update if needed)

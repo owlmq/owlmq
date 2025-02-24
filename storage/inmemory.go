@@ -5,6 +5,12 @@ import (
 	"sync"
 )
 
+func newInMemoryStorage() StorageLayer {
+	return &InMemoryStorage{
+		store: make(map[string]string),
+	}
+}
+
 type InMemoryStorage struct {
 	store map[string]string
 	mu    sync.RWMutex
@@ -27,10 +33,4 @@ func (s *InMemoryStorage) Get(key string) (string, error) {
 	}
 
 	return value, nil
-}
-
-func newInMemoryStorage() StorageLayer {
-	return &InMemoryStorage{
-		store: make(map[string]string),
-	}
 }

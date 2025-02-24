@@ -2,6 +2,7 @@ package chord
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -30,9 +31,15 @@ func (c *Chord) Stabilize() {
 			// 2. Successor nach seinem Predecessor fragen
 			resp, err := client.GetPredecessor(context.Background(), &pb.GetPredecessorRequest{})
 			conn.Close()
-
 			if err != nil {
-				log.Printf("Failed to get predecessor from successor %s: %v", config.GetInstance().Successor, err)
+				log.Printf("Failed to get predecessor from successor  %s: %v updating to next successor in the list", config.GetInstance().Successor, err)
+				//successor is unreachable try the next in my SuccessorList
+				if len(config.GetInstance().SuccessorList) > 0 {
+					config.SetSuccessor(config.GetInstance().SuccessorList[0])
+				} else {
+					// if its empty pick my self -> i am alone in the ring
+					config.SetSuccessor(config.GetInstance().Hostname)
+				}
 				continue
 			}
 
@@ -56,6 +63,68 @@ func (c *Chord) Stabilize() {
 
 				}
 			}
+
+			c.updateFingerTable() // Finger Table aktualisieren
+
+			//TODO update successor stack
+			c.updateSuccessorList()
+
+			//check on Predecessor
+			c.checkPredecessor()
 		}
 	}
+}
+
+func (c *Chord) updateSuccessorList() {
+	suc_list := []string{}
+
+	next := config.GetInstance().Successor
+	for i := 0; i < config.SuccessorListSize; i++ {
+		if next == config.GetInstance().Hostname || next == "" {
+			break
+		}
+		conn, err := grpc.NewClient(next, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Printf("Failed to connect to successor %s: %v", config.GetInstance().Successor, err)
+		}
+		client := pb.NewOwlmqClient(conn)
+		resp, _ := client.GetSuccessor(context.Background(), &pb.GetSuccessorRequest{})
+		conn.Close()
+
+		//add to SuccessorList
+		suc_list = append(suc_list, resp.GetAddress())
+		next = resp.GetAddress()
+	}
+
+	//FIXME this could lead to a memory leak (dangling pointers?)
+	config.GetInstance().SuccessorList = suc_list
+}
+
+// TODO MOVE TO CORRECT LOCATION
+func (c *Chord) checkPredecessor() {
+	conn, err := grpc.NewClient(config.GetInstance().Predecessor, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Println("Vorgänger nicht erreichbar. Ersetze Vorgänger.")
+		replacePredecessor()
+	} else {
+		client := pb.NewOwlmqClient(conn)
+		_, err = client.Ping(context.Background(), &pb.PingRequest{})
+		if err != nil {
+			fmt.Println("Vorgänger nicht erreichbar. Ersetze Vorgänger.")
+			replacePredecessor()
+		} else {
+			//vorgänger läuft normal
+		}
+	}
+}
+
+func replacePredecessor() {
+	suc_list := config.GetInstance().SuccessorList
+
+	//no successors found
+	if len(suc_list) == 0 {
+		config.SetPredecessor(config.GetInstance().Hostname)
+		return
+	}
+	config.SetPredecessor(suc_list[0])
 }

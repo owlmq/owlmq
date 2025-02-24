@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"fmt"
-	"math/big"
 
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/config"
@@ -80,37 +79,11 @@ func (s *OwlmqServer) NodeList(ctx context.Context, req *pb.NodeListRequest) (*p
 
 // TODO this needs to be well tested
 func (s *OwlmqServer) FindSuccessor(ctx context.Context, req *pb.FindSuccessorRequest) (*pb.FindSuccessorResponse, error) {
-	//TODO do i need a mutex here
+	return s.chordLayer.FindSuccessor(ctx, req)
+}
 
-	hash := new(big.Int).SetBytes([]byte(req.Hash))
-	successorID := crypto.HashKey(config.GetInstance().Successor)
-
-	// Check if the key is between this node's ID and its successor's ID
-	if config.GetInstance().Successor != config.GetInstance().Hostname {
-		// If the key is within the range, return the successor
-		if hash.Cmp(config.GetInstance().NodeID) > 0 && hash.Cmp(successorID) <= 0 {
-			return &pb.FindSuccessorResponse{Address: config.GetInstance().Successor}, nil
-		}
-	}
-
-	// Otherwise, forward the request to the closest node (which is the node closest to the key)
-	if config.GetInstance().Predecessor != config.GetInstance().Hostname {
-		conn, err := grpc.NewClient(config.GetInstance().Predecessor, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			return nil, fmt.Errorf("failed to connect to predecessor: %v", err)
-		}
-		defer conn.Close()
-
-		client := pb.NewOwlmqClient(conn)
-		resp, err := client.FindSuccessor(ctx, &pb.FindSuccessorRequest{Hash: req.Hash})
-		if err != nil {
-			return nil, fmt.Errorf("failed to forward FindSuccessor request: %v", err)
-		}
-		return resp, nil
-	}
-
-	// If there’s no predecessor or successor, this node is likely the only node in the ring
-	return &pb.FindSuccessorResponse{Address: config.GetInstance().Hostname}, nil
+func (s *OwlmqServer) GetSuccessor(ctx context.Context, req *pb.GetSuccessorRequest) (*pb.GetSuccessorResponse, error) {
+	return &pb.GetSuccessorResponse{Address: config.GetInstance().Successor}, nil
 }
 
 func (s *OwlmqServer) GetPredecessor(ctx context.Context, req *pb.GetPredecessorRequest) (*pb.GetPredecessorResponse, error) {
@@ -123,4 +96,7 @@ func (s *OwlmqServer) SetPredecessor(ctx context.Context, req *pb.SetPredecessor
 func (s *OwlmqServer) SetSuccessor(ctx context.Context, req *pb.SetSuccessorRequest) (*pb.SetSuccessorResponse, error) {
 	config.SetSuccessor(req.Address)
 	return &pb.SetSuccessorResponse{}, nil
+}
+func (s *OwlmqServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
+	return &pb.PingResponse{}, nil
 }
