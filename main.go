@@ -31,6 +31,9 @@ func main() {
 	}
 	cl := chord.New(sl)
 
+	// stabilize in the Background
+	go cl.Stabilize()
+
 	startServer(c, cl)
 }
 
@@ -39,9 +42,6 @@ func startServer(c *config.Config, cl *chord.Chord) {
 	owlmqServer := web.NewOwlmqServer(cl)
 	pb.RegisterOwlmqServer(server, owlmqServer)
 	reflection.Register(server)
-
-	// stabilize in the Background
-	go owlmqServer.Stabilize()
 
 	log.Printf("[NODEID:%s]: now reachable on %s\n", c.NodeID, c.Hostname)
 	listener, err := net.Listen("tcp", c.Hostname)

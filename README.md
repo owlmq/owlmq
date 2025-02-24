@@ -1,5 +1,11 @@
 # owlmq
 
+
+## TODO
+
+- [ ] bei insert wenn der schlüssel nicht in den lokalen bereich gehört weitergeben
+- [ ] bei get wenn der schlüssel nicht in den lokalen bereich gehört weitergeben
+
 ## idears
 ### schnittstelle nach außen
 * use grpc to connect/interact with the db

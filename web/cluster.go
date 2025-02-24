@@ -3,9 +3,7 @@ package web
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/big"
-	"time"
 
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/config"
@@ -14,6 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// TODO maybe move to chordLayer package
 func (s *OwlmqServer) NodeJoin(ctx context.Context, req *pb.NodeJoinRequest) (*pb.NodeJoinResponse, error) {
 	newNodeAddr := req.Address
 	newNodeID := crypto.HashKey(newNodeAddr)
@@ -124,59 +123,4 @@ func (s *OwlmqServer) SetPredecessor(ctx context.Context, req *pb.SetPredecessor
 func (s *OwlmqServer) SetSuccessor(ctx context.Context, req *pb.SetSuccessorRequest) (*pb.SetSuccessorResponse, error) {
 	config.SetSuccessor(req.Address)
 	return &pb.SetSuccessorResponse{}, nil
-}
-
-func (s *OwlmqServer) Stabilize() {
-	ticker := time.NewTicker(1 * time.Second) // Alle 5 Sekunden ausführen
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			// 1. Verbindung zum aktuellen Successor aufbauen
-			conn, err := grpc.NewClient(config.GetInstance().Successor, grpc.WithTransportCredentials(insecure.NewCredentials()))
-			if err != nil {
-				log.Printf("Failed to connect to successor %s: %v", config.GetInstance().Successor, err)
-				continue
-			}
-			client := pb.NewOwlmqClient(conn)
-
-			// 2. Successor nach seinem Predecessor fragen
-			resp, err := client.GetPredecessor(context.Background(), &pb.GetPredecessorRequest{})
-			conn.Close()
-
-			if err != nil {
-				log.Printf("Failed to get predecessor from successor %s: %v", config.GetInstance().Successor, err)
-				continue
-			}
-
-			// 3. Falls der Predecessor des Successors zwischen diesem Knoten und dem aktuellen Successor liegt, setzen wir ihn als neuen Successor
-			if resp.Address != "" {
-				newSuccessorID := crypto.HashKey(resp.Address)
-				if between(crypto.HashKey(config.GetInstance().Hostname), newSuccessorID, crypto.HashKey(config.GetInstance().Successor)) {
-					config.SetSuccessor(resp.Address)
-					log.Printf("Updated successor to %s", resp.Address)
-				}
-			}
-
-			// 4. Dem neuen Successor mitteilen, dass dieser Knoten sein Predecessor ist
-			conn, err = grpc.NewClient(config.GetInstance().Successor, grpc.WithTransportCredentials(insecure.NewCredentials()))
-			if err == nil {
-				defer conn.Close()
-				client = pb.NewOwlmqClient(conn)
-				_, err = client.SetPredecessor(context.Background(), &pb.SetPredecessorRequest{Address: config.GetInstance().Hostname})
-				if err != nil {
-					log.Printf("Failed to update predecessor of successor %s: %v", config.GetInstance().Successor, err)
-
-				}
-			}
-		}
-	}
-}
-
-func between(start, id, end *big.Int) bool {
-	if start.Cmp(end) < 0 {
-		return start.Cmp(id) < 0 && id.Cmp(end) < 0
-	}
-	return start.Cmp(id) < 0 || id.Cmp(end) < 0
 }
