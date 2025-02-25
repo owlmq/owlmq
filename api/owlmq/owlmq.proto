@@ -1,5 +1,6 @@
 syntax = "proto3";
 //import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 option go_package  = "/owlmq";
 package api_owlmq;
 
@@ -49,6 +50,12 @@ service Owlmq {
   //rpc UserList() returns ();
 
   //##############################
+  //###      replication       ###
+  //##############################
+  rpc GetReplicaEntry(ReplicaGetRequest) returns (ReplicaGetResponse);
+  rpc PutReplicaEntry(ReplicaPutRequest) returns (ReplicaPutResponse);
+
+  //##############################
   //###    key-value store     ###
   //##############################
   rpc Get(KV_GetRequest) returns (KV_GetResponse);
@@ -93,6 +100,40 @@ message SetPredecessorResponse {}
 
 message SetSuccessorRequest { string address = 1; }
 message SetSuccessorResponse {}
+
+//##############################
+//###      replication       ###
+//##############################
+enum REPLICA_STATUS {
+  REPLICA_SUCCESS = 0;
+  REPLICA_FAILURE = 1;
+}
+
+message ReplicatedEntry {
+  string value = 1;
+  string owner_address = 2;
+  google.protobuf.Timestamp last_updated = 3;
+}
+
+message ReplicaGetRequest {
+  string key = 1;
+}
+
+message ReplicaGetResponse {
+  REPLICA_STATUS status = 1;
+  ReplicatedEntry value = 2;
+  string errorMsg = 3;
+}
+
+message ReplicaPutRequest {
+  string key = 1;
+  ReplicatedEntry value = 2;
+}
+
+message ReplicaPutResponse {
+  REPLICA_STATUS status = 1;
+  string errorMsg = 2;
+}
 
 //##############################
 //###    key-value store     ###

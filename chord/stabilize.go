@@ -64,10 +64,11 @@ func (c *Chord) Stabilize() {
 				}
 			}
 
-			c.updateFingerTable() // Finger Table aktualisieren
+			//update fingertable
+			c.updateFingerTable()
 
-			//TODO update successor stack
-			c.updateSuccessorList()
+			//update successor stack
+			c.updateSuccessorAndReplicatorList()
 
 			//check on Predecessor
 			c.checkPredecessor()
@@ -75,11 +76,19 @@ func (c *Chord) Stabilize() {
 	}
 }
 
-func (c *Chord) updateSuccessorList() {
+func (c *Chord) updateSuccessorAndReplicatorList() {
 	suc_list := []string{}
-
+	rep_list := []string{}
 	next := config.GetInstance().Successor
-	for i := 0; i < config.SuccessorListSize; i++ {
+
+	maxIndex := 0
+	if config.SuccessorCount > config.ReplicaCount {
+		maxIndex = config.SuccessorCount
+	} else {
+		maxIndex = config.ReplicaCount
+	}
+
+	for i := 0; i < maxIndex; i++ {
 		if next == config.GetInstance().Hostname || next == "" {
 			break
 		}
@@ -92,12 +101,19 @@ func (c *Chord) updateSuccessorList() {
 		conn.Close()
 
 		//add to SuccessorList
-		suc_list = append(suc_list, resp.GetAddress())
+		if i < config.SuccessorCount {
+			suc_list = append(suc_list, resp.GetAddress())
+		}
+		if i < config.ReplicaCount {
+			rep_list = append(rep_list, resp.GetAddress())
+		}
+
 		next = resp.GetAddress()
 	}
 
 	//FIXME this could lead to a memory leak (dangling pointers?)
 	config.GetInstance().SuccessorList = suc_list
+	config.GetInstance().ReplicatorNodeList = rep_list
 }
 
 // TODO MOVE TO CORRECT LOCATION

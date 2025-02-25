@@ -19,16 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Owlmq_NodeJoin_FullMethodName       = "/api_owlmq.Owlmq/NodeJoin"
-	Owlmq_NodeList_FullMethodName       = "/api_owlmq.Owlmq/NodeList"
-	Owlmq_FindSuccessor_FullMethodName  = "/api_owlmq.Owlmq/FindSuccessor"
-	Owlmq_Ping_FullMethodName           = "/api_owlmq.Owlmq/Ping"
-	Owlmq_GetPredecessor_FullMethodName = "/api_owlmq.Owlmq/GetPredecessor"
-	Owlmq_GetSuccessor_FullMethodName   = "/api_owlmq.Owlmq/GetSuccessor"
-	Owlmq_SetPredecessor_FullMethodName = "/api_owlmq.Owlmq/SetPredecessor"
-	Owlmq_SetSuccessor_FullMethodName   = "/api_owlmq.Owlmq/SetSuccessor"
-	Owlmq_Get_FullMethodName            = "/api_owlmq.Owlmq/Get"
-	Owlmq_Put_FullMethodName            = "/api_owlmq.Owlmq/Put"
+	Owlmq_NodeJoin_FullMethodName        = "/api_owlmq.Owlmq/NodeJoin"
+	Owlmq_NodeList_FullMethodName        = "/api_owlmq.Owlmq/NodeList"
+	Owlmq_FindSuccessor_FullMethodName   = "/api_owlmq.Owlmq/FindSuccessor"
+	Owlmq_Ping_FullMethodName            = "/api_owlmq.Owlmq/Ping"
+	Owlmq_GetPredecessor_FullMethodName  = "/api_owlmq.Owlmq/GetPredecessor"
+	Owlmq_GetSuccessor_FullMethodName    = "/api_owlmq.Owlmq/GetSuccessor"
+	Owlmq_SetPredecessor_FullMethodName  = "/api_owlmq.Owlmq/SetPredecessor"
+	Owlmq_SetSuccessor_FullMethodName    = "/api_owlmq.Owlmq/SetSuccessor"
+	Owlmq_GetReplicaEntry_FullMethodName = "/api_owlmq.Owlmq/GetReplicaEntry"
+	Owlmq_PutReplicaEntry_FullMethodName = "/api_owlmq.Owlmq/PutReplicaEntry"
+	Owlmq_Get_FullMethodName             = "/api_owlmq.Owlmq/Get"
+	Owlmq_Put_FullMethodName             = "/api_owlmq.Owlmq/Put"
 )
 
 // OwlmqClient is the client API for Owlmq service.
@@ -53,6 +55,11 @@ type OwlmqClient interface {
 	GetSuccessor(ctx context.Context, in *GetSuccessorRequest, opts ...grpc.CallOption) (*GetSuccessorResponse, error)
 	SetPredecessor(ctx context.Context, in *SetPredecessorRequest, opts ...grpc.CallOption) (*SetPredecessorResponse, error)
 	SetSuccessor(ctx context.Context, in *SetSuccessorRequest, opts ...grpc.CallOption) (*SetSuccessorResponse, error)
+	// ##############################
+	// ###      replication       ###
+	// ##############################
+	GetReplicaEntry(ctx context.Context, in *ReplicaGetRequest, opts ...grpc.CallOption) (*ReplicaGetResponse, error)
+	PutReplicaEntry(ctx context.Context, in *ReplicaPutRequest, opts ...grpc.CallOption) (*ReplicaPutResponse, error)
 	// ##############################
 	// ###    key-value store     ###
 	// ##############################
@@ -148,6 +155,26 @@ func (c *owlmqClient) SetSuccessor(ctx context.Context, in *SetSuccessorRequest,
 	return out, nil
 }
 
+func (c *owlmqClient) GetReplicaEntry(ctx context.Context, in *ReplicaGetRequest, opts ...grpc.CallOption) (*ReplicaGetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReplicaGetResponse)
+	err := c.cc.Invoke(ctx, Owlmq_GetReplicaEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *owlmqClient) PutReplicaEntry(ctx context.Context, in *ReplicaPutRequest, opts ...grpc.CallOption) (*ReplicaPutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReplicaPutResponse)
+	err := c.cc.Invoke(ctx, Owlmq_PutReplicaEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *owlmqClient) Get(ctx context.Context, in *KV_GetRequest, opts ...grpc.CallOption) (*KV_GetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(KV_GetResponse)
@@ -191,6 +218,11 @@ type OwlmqServer interface {
 	SetPredecessor(context.Context, *SetPredecessorRequest) (*SetPredecessorResponse, error)
 	SetSuccessor(context.Context, *SetSuccessorRequest) (*SetSuccessorResponse, error)
 	// ##############################
+	// ###      replication       ###
+	// ##############################
+	GetReplicaEntry(context.Context, *ReplicaGetRequest) (*ReplicaGetResponse, error)
+	PutReplicaEntry(context.Context, *ReplicaPutRequest) (*ReplicaPutResponse, error)
+	// ##############################
 	// ###    key-value store     ###
 	// ##############################
 	Get(context.Context, *KV_GetRequest) (*KV_GetResponse, error)
@@ -228,6 +260,12 @@ func (UnimplementedOwlmqServer) SetPredecessor(context.Context, *SetPredecessorR
 }
 func (UnimplementedOwlmqServer) SetSuccessor(context.Context, *SetSuccessorRequest) (*SetSuccessorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetSuccessor not implemented")
+}
+func (UnimplementedOwlmqServer) GetReplicaEntry(context.Context, *ReplicaGetRequest) (*ReplicaGetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReplicaEntry not implemented")
+}
+func (UnimplementedOwlmqServer) PutReplicaEntry(context.Context, *ReplicaPutRequest) (*ReplicaPutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PutReplicaEntry not implemented")
 }
 func (UnimplementedOwlmqServer) Get(context.Context, *KV_GetRequest) (*KV_GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
@@ -400,6 +438,42 @@ func _Owlmq_SetSuccessor_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Owlmq_GetReplicaEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplicaGetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).GetReplicaEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_GetReplicaEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).GetReplicaEntry(ctx, req.(*ReplicaGetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Owlmq_PutReplicaEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplicaPutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).PutReplicaEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_PutReplicaEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).PutReplicaEntry(ctx, req.(*ReplicaPutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Owlmq_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(KV_GetRequest)
 	if err := dec(in); err != nil {
@@ -474,6 +548,14 @@ var Owlmq_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetSuccessor",
 			Handler:    _Owlmq_SetSuccessor_Handler,
+		},
+		{
+			MethodName: "GetReplicaEntry",
+			Handler:    _Owlmq_GetReplicaEntry_Handler,
+		},
+		{
+			MethodName: "PutReplicaEntry",
+			Handler:    _Owlmq_PutReplicaEntry_Handler,
 		},
 		{
 			MethodName: "Get",

@@ -7,8 +7,10 @@ import (
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/config"
 	"github.com/owlmq/owlmq/crypto"
+	"github.com/owlmq/owlmq/replicator"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // TODO maybe move to chordLayer package
@@ -89,14 +91,50 @@ func (s *OwlmqServer) GetSuccessor(ctx context.Context, req *pb.GetSuccessorRequ
 func (s *OwlmqServer) GetPredecessor(ctx context.Context, req *pb.GetPredecessorRequest) (*pb.GetPredecessorResponse, error) {
 	return &pb.GetPredecessorResponse{Address: config.GetInstance().Predecessor}, nil
 }
+
 func (s *OwlmqServer) SetPredecessor(ctx context.Context, req *pb.SetPredecessorRequest) (*pb.SetPredecessorResponse, error) {
 	config.SetPredecessor(req.Address)
 	return &pb.SetPredecessorResponse{}, nil
 }
+
 func (s *OwlmqServer) SetSuccessor(ctx context.Context, req *pb.SetSuccessorRequest) (*pb.SetSuccessorResponse, error) {
 	config.SetSuccessor(req.Address)
 	return &pb.SetSuccessorResponse{}, nil
 }
+
 func (s *OwlmqServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
 	return &pb.PingResponse{}, nil
+}
+
+func (s *OwlmqServer) PutReplicaEntry(ctx context.Context, req *pb.ReplicaPutRequest) (*pb.ReplicaPutResponse, error) {
+	replicator.GetInstance().PutEntry(req.Key, replicator.ReplicatedEntry{
+		Value:        req.GetValue().GetValue(),
+		OwnerAddress: req.GetValue().GetOwnerAddress(),
+		LastUpdated:  req.GetValue().GetLastUpdated().AsTime(),
+	})
+	return &pb.ReplicaPutResponse{
+		Status:   pb.REPLICA_STATUS_REPLICA_SUCCESS,
+		ErrorMsg: "",
+	}, nil
+}
+
+func (s *OwlmqServer) GetReplicaEntry(ctx context.Context, req *pb.ReplicaGetRequest) (*pb.ReplicaGetResponse, error) {
+	entry, err := replicator.GetInstance().GetEntry(req.Key)
+	if err != nil {
+		return &pb.ReplicaGetResponse{
+			Status:   pb.REPLICA_STATUS_REPLICA_FAILURE,
+			ErrorMsg: err.Error(),
+		}, err
+	}
+
+	return &pb.ReplicaGetResponse{
+		Value: &pb.ReplicatedEntry{
+			Value:        entry.Value,
+			OwnerAddress: entry.OwnerAddress,
+			LastUpdated:  timestamppb.New(entry.LastUpdated),
+		},
+		Status:   pb.REPLICA_STATUS_REPLICA_SUCCESS,
+		ErrorMsg: "",
+	}, nil
+
 }

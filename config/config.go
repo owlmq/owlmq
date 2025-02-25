@@ -15,7 +15,12 @@ var M int64 = 32 //-> 10.000 nodes
 
 // TODO later make this part of the configuration file
 // this is the len of the SuccessorList so the amound of Successors which are stored in it
-var SuccessorListSize int = 4
+var SuccessorCount int = 4
+
+// TODO later make this part of the configuration file
+// this is the len of the ReplicatorNodeList so the amound of Replicator per Key-Value Pair
+var ReplicaCount int = 1
+var ReplicaLeaseDuration int = 30 // Lease-Time of Replications (in secounds)
 
 type FingerEntry struct {
 	Start   *big.Int
@@ -28,8 +33,9 @@ type Config struct {
 	Predecessor string
 	Successor   string
 
-	SuccessorList []string
-	FingerTable   []*FingerEntry
+	SuccessorList      []string
+	ReplicatorNodeList []string
+	FingerTable        []*FingerEntry
 
 	//passwords
 	Password_JOIN   string
@@ -47,8 +53,9 @@ func New(hostname string) *Config {
 			Predecessor: hostname,
 			Successor:   hostname,
 
-			SuccessorList: make([]string, SuccessorListSize),
-			FingerTable:   make([]*FingerEntry, M),
+			SuccessorList:      make([]string, SuccessorCount),
+			ReplicatorNodeList: make([]string, ReplicaCount),
+			FingerTable:        make([]*FingerEntry, M),
 			//generate initial passwords for nodes joining and passwords connecting
 			Password_JOIN:   crypto.GenerateSecurePassword(16),
 			Password_PLUGIN: crypto.GenerateSecurePassword(16),

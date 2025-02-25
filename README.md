@@ -3,8 +3,8 @@
 
 ## TODO
 
-- [ ] bei insert wenn der schlüssel nicht in den lokalen bereich gehört weitergeben
-- [ ] bei get wenn der schlüssel nicht in den lokalen bereich gehört weitergeben
+- [ ] GET und PUT sollen fingertable benutzen
+
 
 ## idears
 ### schnittstelle nach außen

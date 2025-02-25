@@ -5,6 +5,14 @@ import "errors"
 type StorageLayer interface {
 	Put(key string, value string)
 	Get(key string) (string, error)
+
+	//interator over the storage
+	Iterator() Iterator
+}
+
+type Iterator interface {
+	Next() bool
+	Value() (string, string)
 }
 
 func New(st StorageType) (StorageLayer, error) {

@@ -1,23 +1,39 @@
 package replicator
 
 import (
-	"errors"
+	"sync"
+	"time"
 
 	"github.com/owlmq/owlmq/chord"
 	"github.com/owlmq/owlmq/storage"
 )
 
 type Replicator interface {
-	Start()
+	StartReplicationRoutine()
+	StartCleanupRoutine()
+	TakeOverReplicas(address string)
+
+	PutEntry(key string, value ReplicatedEntry)
+	GetEntry(key string) (*ReplicatedEntry, error)
 }
 
-func New(rt ReplicatorType, s storage.StorageLayer, c chord.Chord) (Replicator, error) {
-	switch rt {
-	case SuccessorList:
-		return newSuccessorListReplicator(), nil
-	case VirtualNode:
-		return nil, errors.New("Unimplemented Storagelayer Type")
-	default:
-		return nil, errors.New("Unknown StorageLayer Type")
-	}
+type ReplicatedEntry struct {
+	Value        string
+	OwnerAddress string
+	LastUpdated  time.Time
+}
+
+var replicatorInstance Replicator
+var once sync.Once
+
+func New(s storage.StorageLayer, c chord.Chord) (Replicator, error) {
+	once.Do(func() {
+		replicatorInstance = newSuccessorListReplicator(s, c)
+	})
+	return replicatorInstance, nil
+	//maybe add other replicators later
+}
+
+func GetInstance() Replicator {
+	return replicatorInstance
 }

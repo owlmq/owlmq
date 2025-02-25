@@ -34,3 +34,7 @@ func (s *InMemoryStorage) Get(key string) (string, error) {
 
 	return value, nil
 }
+
+func (s *InMemoryStorage) Iterator() Iterator {
+	return newMapIterator(s.store)
+}

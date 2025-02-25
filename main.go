@@ -8,6 +8,7 @@ import (
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/chord"
 	"github.com/owlmq/owlmq/config"
+	"github.com/owlmq/owlmq/replicator"
 	"github.com/owlmq/owlmq/storage"
 	"github.com/owlmq/owlmq/web"
 	"google.golang.org/grpc"
@@ -30,6 +31,11 @@ func main() {
 		panic(err)
 	}
 	cl := chord.New(sl)
+
+	//TODO replicator
+	rep, _ := replicator.New(sl, *cl)
+	go rep.StartReplicationRoutine()
+	go rep.StartCleanupRoutine()
 
 	// stabilize in the Background
 	go cl.Stabilize()
