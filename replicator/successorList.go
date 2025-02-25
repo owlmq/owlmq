@@ -6,7 +6,6 @@ import (
 	"time"
 
 	pb "github.com/owlmq/owlmq/api/owlmq"
-	"github.com/owlmq/owlmq/chord"
 	"github.com/owlmq/owlmq/config"
 	"github.com/owlmq/owlmq/storage"
 	"google.golang.org/grpc"
@@ -14,19 +13,17 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func newSuccessorListReplicator(s storage.StorageLayer, c chord.Chord) Replicator {
+func newSuccessorListReplicator(s storage.StorageLayer) Replicator {
 	return &SuccessorListReplicator{
 		//init the replica storage once when starting the node
 		replicastorage:   newReplicaStorage(),
 		nodeStorageLayer: s,
-		chordLayer:       c,
 	}
 }
 
 type SuccessorListReplicator struct {
 	replicastorage   *ReplicaStorage
 	nodeStorageLayer storage.StorageLayer
-	chordLayer       chord.Chord
 }
 
 func (s *SuccessorListReplicator) StartReplicationRoutine() {
@@ -69,14 +66,42 @@ func (s *SuccessorListReplicator) StartReplicationRoutine() {
 }
 
 func (s *SuccessorListReplicator) StartCleanupRoutine() {
-	fmt.Println("CLEANUP")
-	//TODO at this point we need to find out if the last replication of a key is longer than x time e.g. 4*replication cicle and if the LastUpdate is longer the replicated key will be removed
-	panic("Unimplemented")
+	ticker := time.NewTicker(1000 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			//TODO maybe refactor later so that the replication storage also gets a iterator
+			for k, v := range s.replicastorage.store {
+				n := time.Now()
+
+				rt := n.Sub(v.LastUpdated).Seconds()
+				md := (time.Duration(config.ReplicaLeaseDuration) * time.Second).Seconds()
+
+				if rt > md {
+					//debugging output
+					//fmt.Printf("removing replicated key:%v with value:%v from replication storage\n", k, v)
+					//replica is to old
+					delete(s.replicastorage.store, k)
+				}
+			}
+
+		}
+	}
 }
 
 func (s *SuccessorListReplicator) TakeOverReplicas(address string) {
 	//TODO this will get triggered if our predeccessor dies, if so we move every key if its key space into our normal node storage
-	panic("Unimplemented")
+	fmt.Println("TAKE OVER KEY SPACE:", address)
+	fmt.Println(s.replicastorage.store)
+	for k, v := range s.replicastorage.store {
+		fmt.Println(v.OwnerAddress)
+		if v.OwnerAddress == address {
+			fmt.Println("put replicated key into my key space")
+			s.nodeStorageLayer.Put(k, v.Value)
+		}
+	}
 }
 
 // function so that the API call can add new replicas to this node

@@ -22,6 +22,7 @@ var SuccessorCount int = 4
 var ReplicaCount int = 1
 var ReplicaLeaseDuration int = 30 // Lease-Time of Replications (in secounds)
 
+// entry in the fingertable
 type FingerEntry struct {
 	Start   *big.Int
 	Address string

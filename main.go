@@ -32,8 +32,8 @@ func main() {
 	}
 	cl := chord.New(sl)
 
-	//TODO replicator
-	rep, _ := replicator.New(sl, *cl)
+	// replicator
+	rep, _ := replicator.New(sl)
 	go rep.StartReplicationRoutine()
 	go rep.StartCleanupRoutine()
 

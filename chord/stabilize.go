@@ -9,6 +9,7 @@ import (
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/config"
 	"github.com/owlmq/owlmq/crypto"
+	"github.com/owlmq/owlmq/replicator"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -35,7 +36,7 @@ func (c *Chord) Stabilize() {
 				log.Printf("Failed to get predecessor from successor  %s: %v updating to next successor in the list", config.GetInstance().Successor, err)
 				//successor is unreachable try the next in my SuccessorList
 				if len(config.GetInstance().SuccessorList) > 0 {
-					config.SetSuccessor(config.GetInstance().SuccessorList[0])
+					config.SetSuccessor(config.GetInstance().SuccessorList[1])
 				} else {
 					// if its empty pick my self -> i am alone in the ring
 					config.SetSuccessor(config.GetInstance().Hostname)
@@ -77,9 +78,9 @@ func (c *Chord) Stabilize() {
 }
 
 func (c *Chord) updateSuccessorAndReplicatorList() {
-	suc_list := []string{}
-	rep_list := []string{}
 	next := config.GetInstance().Successor
+	suc_list := []string{next}
+	rep_list := []string{next}
 
 	maxIndex := 0
 	if config.SuccessorCount > config.ReplicaCount {
@@ -92,6 +93,7 @@ func (c *Chord) updateSuccessorAndReplicatorList() {
 		if next == config.GetInstance().Hostname || next == "" {
 			break
 		}
+
 		conn, err := grpc.NewClient(next, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Printf("Failed to connect to successor %s: %v", config.GetInstance().Successor, err)
@@ -135,6 +137,9 @@ func (c *Chord) checkPredecessor() {
 }
 
 func replacePredecessor() {
+	//transfer the replicated keys of the predecessor into my key-space
+	replicator.GetInstance().TakeOverReplicas(config.GetInstance().Predecessor)
+
 	suc_list := config.GetInstance().SuccessorList
 
 	//no successors found
@@ -142,5 +147,8 @@ func replacePredecessor() {
 		config.SetPredecessor(config.GetInstance().Hostname)
 		return
 	}
+	//TODO think about this
+	//just set the next node as my predecessor
 	config.SetPredecessor(suc_list[0])
+
 }

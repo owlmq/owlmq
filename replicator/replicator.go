@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/owlmq/owlmq/chord"
 	"github.com/owlmq/owlmq/storage"
 )
 
@@ -26,9 +25,9 @@ type ReplicatedEntry struct {
 var replicatorInstance Replicator
 var once sync.Once
 
-func New(s storage.StorageLayer, c chord.Chord) (Replicator, error) {
+func New(s storage.StorageLayer) (Replicator, error) {
 	once.Do(func() {
-		replicatorInstance = newSuccessorListReplicator(s, c)
+		replicatorInstance = newSuccessorListReplicator(s)
 	})
 	return replicatorInstance, nil
 	//maybe add other replicators later
