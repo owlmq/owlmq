@@ -8,6 +8,7 @@ import (
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/chord"
 	"github.com/owlmq/owlmq/config"
+	"github.com/owlmq/owlmq/messaging"
 	"github.com/owlmq/owlmq/replicator"
 	"github.com/owlmq/owlmq/storage"
 	"github.com/owlmq/owlmq/web"
@@ -40,12 +41,14 @@ func main() {
 	// stabilize in the Background
 	go cl.Stabilize()
 
-	startServer(c, cl)
+	//messaging layer
+	ml, _ := messaging.New()
+	startServer(c, cl, ml)
 }
 
-func startServer(c *config.Config, cl *chord.Chord) {
+func startServer(c *config.Config, cl *chord.Chord, ml messaging.MessagingLayer) {
 	server := grpc.NewServer()
-	owlmqServer := web.NewOwlmqServer(cl)
+	owlmqServer := web.NewOwlmqServer(cl, ml)
 	pb.RegisterOwlmqServer(server, owlmqServer)
 	reflection.Register(server)
 

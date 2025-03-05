@@ -88,6 +88,7 @@ subscribers: []
 Key: "m:uuid"
 Value:
 ```
+Content: ""
 ```
 4. User
 Key: "u:uuid"

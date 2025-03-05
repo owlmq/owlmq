@@ -60,7 +60,49 @@ service Owlmq {
   //##############################
   rpc Get(KV_GetRequest) returns (KV_GetResponse);
   rpc Put(KV_PutRequest) returns (KV_PutResponse);
+
+  //##############################
+  //###       messaging        ###
+  //##############################
+  rpc Publish(Message) returns (PublishResponse);
+  rpc ConsumeOne(ConsumeOneRequest) returns (Message);
+  rpc Consume(ConsumeRequest) returns (stream Message);
+  rpc Ack(AckRequest) returns (AckResponse);
 }
+//##################
+//###  messaging ###
+//##################
+enum MESSAGE_STATUS {
+  MSG_SUCCESS = 0;
+  MSG_FAILURE = 1;
+}
+
+message Message {
+  //TODO think about this, could be nice so that the user can set the id -> storage location on the ring
+  string uuid = 1;
+  string content = 2;
+}
+
+message PublishResponse {
+  MESSAGE_STATUS status = 1;
+}
+
+message ConsumeOneRequest {
+  string consumer_id = 1;
+}
+
+message ConsumeRequest {
+  string consumer_id = 1;
+}
+
+message AckRequest {
+  string message_uuid = 1;
+}
+
+message AckResponse {
+  MESSAGE_STATUS status = 1;
+}
+
 
 //##################
 //###   cluster  ###

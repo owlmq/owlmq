@@ -31,6 +31,10 @@ const (
 	Owlmq_PutReplicaEntry_FullMethodName = "/api_owlmq.Owlmq/PutReplicaEntry"
 	Owlmq_Get_FullMethodName             = "/api_owlmq.Owlmq/Get"
 	Owlmq_Put_FullMethodName             = "/api_owlmq.Owlmq/Put"
+	Owlmq_Publish_FullMethodName         = "/api_owlmq.Owlmq/Publish"
+	Owlmq_ConsumeOne_FullMethodName      = "/api_owlmq.Owlmq/ConsumeOne"
+	Owlmq_Consume_FullMethodName         = "/api_owlmq.Owlmq/Consume"
+	Owlmq_Ack_FullMethodName             = "/api_owlmq.Owlmq/Ack"
 )
 
 // OwlmqClient is the client API for Owlmq service.
@@ -65,6 +69,13 @@ type OwlmqClient interface {
 	// ##############################
 	Get(ctx context.Context, in *KV_GetRequest, opts ...grpc.CallOption) (*KV_GetResponse, error)
 	Put(ctx context.Context, in *KV_PutRequest, opts ...grpc.CallOption) (*KV_PutResponse, error)
+	// ##############################
+	// ###       messaging        ###
+	// ##############################
+	Publish(ctx context.Context, in *Message, opts ...grpc.CallOption) (*PublishResponse, error)
+	ConsumeOne(ctx context.Context, in *ConsumeOneRequest, opts ...grpc.CallOption) (*Message, error)
+	Consume(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Message], error)
+	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
 }
 
 type owlmqClient struct {
@@ -195,6 +206,55 @@ func (c *owlmqClient) Put(ctx context.Context, in *KV_PutRequest, opts ...grpc.C
 	return out, nil
 }
 
+func (c *owlmqClient) Publish(ctx context.Context, in *Message, opts ...grpc.CallOption) (*PublishResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PublishResponse)
+	err := c.cc.Invoke(ctx, Owlmq_Publish_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *owlmqClient) ConsumeOne(ctx context.Context, in *ConsumeOneRequest, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, Owlmq_ConsumeOne_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *owlmqClient) Consume(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Message], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Owlmq_ServiceDesc.Streams[0], Owlmq_Consume_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ConsumeRequest, Message]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Owlmq_ConsumeClient = grpc.ServerStreamingClient[Message]
+
+func (c *owlmqClient) Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AckResponse)
+	err := c.cc.Invoke(ctx, Owlmq_Ack_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OwlmqServer is the server API for Owlmq service.
 // All implementations must embed UnimplementedOwlmqServer
 // for forward compatibility.
@@ -227,6 +287,13 @@ type OwlmqServer interface {
 	// ##############################
 	Get(context.Context, *KV_GetRequest) (*KV_GetResponse, error)
 	Put(context.Context, *KV_PutRequest) (*KV_PutResponse, error)
+	// ##############################
+	// ###       messaging        ###
+	// ##############################
+	Publish(context.Context, *Message) (*PublishResponse, error)
+	ConsumeOne(context.Context, *ConsumeOneRequest) (*Message, error)
+	Consume(*ConsumeRequest, grpc.ServerStreamingServer[Message]) error
+	Ack(context.Context, *AckRequest) (*AckResponse, error)
 	mustEmbedUnimplementedOwlmqServer()
 }
 
@@ -272,6 +339,18 @@ func (UnimplementedOwlmqServer) Get(context.Context, *KV_GetRequest) (*KV_GetRes
 }
 func (UnimplementedOwlmqServer) Put(context.Context, *KV_PutRequest) (*KV_PutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Put not implemented")
+}
+func (UnimplementedOwlmqServer) Publish(context.Context, *Message) (*PublishResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
+}
+func (UnimplementedOwlmqServer) ConsumeOne(context.Context, *ConsumeOneRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConsumeOne not implemented")
+}
+func (UnimplementedOwlmqServer) Consume(*ConsumeRequest, grpc.ServerStreamingServer[Message]) error {
+	return status.Errorf(codes.Unimplemented, "method Consume not implemented")
+}
+func (UnimplementedOwlmqServer) Ack(context.Context, *AckRequest) (*AckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ack not implemented")
 }
 func (UnimplementedOwlmqServer) mustEmbedUnimplementedOwlmqServer() {}
 func (UnimplementedOwlmqServer) testEmbeddedByValue()               {}
@@ -510,6 +589,71 @@ func _Owlmq_Put_Handler(srv interface{}, ctx context.Context, dec func(interface
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Owlmq_Publish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Message)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).Publish(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_Publish_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).Publish(ctx, req.(*Message))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Owlmq_ConsumeOne_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConsumeOneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).ConsumeOne(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_ConsumeOne_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).ConsumeOne(ctx, req.(*ConsumeOneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Owlmq_Consume_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ConsumeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(OwlmqServer).Consume(m, &grpc.GenericServerStream[ConsumeRequest, Message]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Owlmq_ConsumeServer = grpc.ServerStreamingServer[Message]
+
+func _Owlmq_Ack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AckRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).Ack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_Ack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).Ack(ctx, req.(*AckRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Owlmq_ServiceDesc is the grpc.ServiceDesc for Owlmq service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -565,7 +709,25 @@ var Owlmq_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Put",
 			Handler:    _Owlmq_Put_Handler,
 		},
+		{
+			MethodName: "Publish",
+			Handler:    _Owlmq_Publish_Handler,
+		},
+		{
+			MethodName: "ConsumeOne",
+			Handler:    _Owlmq_ConsumeOne_Handler,
+		},
+		{
+			MethodName: "Ack",
+			Handler:    _Owlmq_Ack_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Consume",
+			Handler:       _Owlmq_Consume_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "owlmq/owlmq.proto",
 }
