@@ -7,6 +7,8 @@ import (
 	"github.com/owlmq/owlmq/crypto"
 )
 
+//TODO refactor every use of config to use getter and setter + secure the getter and setter with mutexes
+
 // TODO later make this part of the configuration file
 var M int64 = 32 //-> 10.000 nodes
 //var M int64 = 64 //-> 1 million nodes
@@ -83,4 +85,13 @@ func SetSuccessor(address string) {
 
 func SetPredecessor(address string) {
 	instance.Predecessor = address
+}
+
+var mu sync.Mutex
+
+func SetSuccessorList(list []string) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	instance.SuccessorList = list
 }

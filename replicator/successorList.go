@@ -41,7 +41,7 @@ func (s *SuccessorListReplicator) StartReplicationRoutine() {
 				//loop over replicator nodes
 				for _, address := range config.GetInstance().ReplicatorNodeList {
 					//debugging output
-					fmt.Printf("replicating the key %v with value %v to node %v\n", key, value, address)
+					//fmt.Printf("replicating the key %v with value %v to node %v\n", key, value, address)
 
 					//move to the replicatorNode
 					conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -93,6 +93,7 @@ func (s *SuccessorListReplicator) StartCleanupRoutine() {
 
 func (s *SuccessorListReplicator) TakeOverReplicas(address string) {
 	//TODO this will get triggered if our predeccessor dies, if so we move every key if its key space into our normal node storage
+	//TODO think about this (is there a way that we have the key 2 times in the ring if we just move it to our key space)
 	fmt.Println("TAKE OVER KEY SPACE:", address)
 	fmt.Println(s.replicastorage.store)
 	for k, v := range s.replicastorage.store {

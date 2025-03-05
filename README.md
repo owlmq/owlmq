@@ -24,6 +24,7 @@
     * als schlüssel wird ein json objekt genutzt welches zusätzlich noch einen laufindex beinhaltet; das hat zur folge dass nach dem hashing des schlüssels die einzelnen nachrichten gleichmäßig verteilt im system abgelegt werden.
     * möchte ein beobachter, observer einer queue die letzte nachricht kann er sich auf einen knoten subscriben welcher den head, tail zeiger hat; ändert sich dieser dann bekommt er die letzte nachricht
 * die queues können jeweils auf einem knoten im system gespeichert werden, dann könnte man eine gute Datenstruktur wählen und hätte bessere performance lokal
+* eine weitere idee ist es nachrichten queues entweder auf der festplatte oder im arbeitsspeicher zu halten, hier könnte auch eine interessante hybrid lösung implementiert werden (für mehr performance werden aktuelle nachrichten im arbeitsspeicher gehalten, alte nachrichten zB älter als eine definierte zeit werden auf die platte geschrieben, wären dann langsamer erreichbar aber würde die geschwindigkeit erhöhen und I/O zugriffe senken)
 
 ### lookup des knotens mit dem chord protocol
 
@@ -63,6 +64,53 @@ um für ausfallssicherheit bei der verbindung zu sorgen könnte es sinn machen w
 ### loadbalancing
 
 * maybe use envoy (if it supports loadbalancing of grpc)
+
+### Logs
+
+* the system logs of owlmq can be stored inside owlmq itself
+
+
+### Message Queue on Key-Value
+
+The following structure is the way the objects of owl are stored on the key-value interface.
+
+#### Key-Prefix
+
+2. Queue
+Key: "q:uuid"
+Value:
+```
+name: ""
+persistent: true | false
+subscribers: []
+```
+3. Message
+Key: "m:uuid"
+Value:
+```
+```
+4. User
+Key: "u:uuid"
+Value:
+```
+name: ""
+password_hash: ""
+```
+5. Node
+Key: "n:nodeid"
+Value:
+```
+```
+
+6. Exchange (later)
+Key:"e:uuid"
+Value:
+```
+name: ""
+type: "direct | fanout | topic"
+bindings: "[q:1234,q:2345,q:3456]"
+```
+
 
 ### Plugin amqp
 

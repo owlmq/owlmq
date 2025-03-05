@@ -21,6 +21,9 @@ func (c *Chord) Stabilize() {
 	for {
 		select {
 		case <-ticker.C:
+			if config.GetInstance().Successor == "" {
+				config.GetInstance().Successor = config.GetInstance().Hostname
+			}
 			// 1. Verbindung zum aktuellen Successor aufbauen
 			conn, err := grpc.NewClient(config.GetInstance().Successor, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
@@ -30,6 +33,7 @@ func (c *Chord) Stabilize() {
 			client := pb.NewOwlmqClient(conn)
 
 			// 2. Successor nach seinem Predecessor fragen
+			//TODO HERE WE HAVE AN ERROR THE SECCESSOR IS EMPTY
 			resp, err := client.GetPredecessor(context.Background(), &pb.GetPredecessorRequest{})
 			conn.Close()
 			if err != nil {
@@ -89,7 +93,7 @@ func (c *Chord) updateSuccessorAndReplicatorList() {
 		maxIndex = config.ReplicaCount
 	}
 
-	for i := 0; i < maxIndex; i++ {
+	for i := 1; i < maxIndex; i++ {
 		if next == config.GetInstance().Hostname || next == "" {
 			break
 		}
@@ -147,8 +151,8 @@ func replacePredecessor() {
 		config.SetPredecessor(config.GetInstance().Hostname)
 		return
 	}
-	//TODO think about this
+	//TODO think about this, e.g test if it is online
 	//just set the next node as my predecessor
-	config.SetPredecessor(suc_list[0])
+	config.SetPredecessor(suc_list[1])
 
 }
