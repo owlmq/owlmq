@@ -42,7 +42,7 @@ func main() {
 	go cl.Stabilize()
 
 	//messaging layer
-	ml, _ := messaging.New()
+	ml, _ := messaging.New(cl)
 	startServer(c, cl, ml)
 }
 

@@ -64,9 +64,11 @@ service Owlmq {
   //##############################
   //###       messaging        ###
   //##############################
-  rpc Publish(Message) returns (PublishResponse);
+  rpc ProduceOne(Message) returns (ProduceOneResponse);
+  rpc Produce(stream Message) returns (ProduceResponse);
   rpc ConsumeOne(ConsumeOneRequest) returns (Message);
   rpc Consume(ConsumeRequest) returns (stream Message);
+  rpc NewQueue(NewQueueRequest) returns (NewQueueResponse);
   rpc Ack(AckRequest) returns (AckResponse);
 }
 //##################
@@ -83,7 +85,11 @@ message Message {
   string content = 2;
 }
 
-message PublishResponse {
+message ProduceOneResponse {
+  MESSAGE_STATUS status = 1;
+}
+
+message ProduceResponse {
   MESSAGE_STATUS status = 1;
 }
 
@@ -103,6 +109,14 @@ message AckResponse {
   MESSAGE_STATUS status = 1;
 }
 
+message NewQueueRequest {
+  string queue_name = 1;
+}
+
+message NewQueueResponse {
+  MESSAGE_STATUS status = 1;
+  //TODO maybe add an error field for the error text
+}
 
 //##################
 //###   cluster  ###

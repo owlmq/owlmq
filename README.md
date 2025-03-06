@@ -74,44 +74,6 @@ um für ausfallssicherheit bei der verbindung zu sorgen könnte es sinn machen w
 
 The following structure is the way the objects of owl are stored on the key-value interface.
 
-#### Key-Prefix
-
-2. Queue
-Key: "q:uuid"
-Value:
-```
-name: ""
-persistent: true | false
-subscribers: []
-```
-3. Message
-Key: "m:uuid"
-Value:
-```
-Content: ""
-```
-4. User
-Key: "u:uuid"
-Value:
-```
-name: ""
-password_hash: ""
-```
-5. Node
-Key: "n:nodeid"
-Value:
-```
-```
-
-6. Exchange (later)
-Key:"e:uuid"
-Value:
-```
-name: ""
-type: "direct | fanout | topic"
-bindings: "[q:1234,q:2345,q:3456]"
-```
-
 
 ### Plugin amqp
 

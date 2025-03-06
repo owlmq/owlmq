@@ -1,53 +1,51 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"log"
+
+	pb "github.com/owlmq/owlmq/api/owlmq"
+	"google.golang.org/grpc"
+)
 
 // This example demonstrates sending a message and later recving it
 func main() {
-	//TODO use grpc
-	//connect
-	api := Pb{}
+	//Connect
+	conn, err := grpc.Dial("localhost:9000", grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	api := pb.NewOwlmqClient(conn)
 
 	// ======== Create Queue
 	qName := "abc-queue"
-	if api.NewQueue(
-		qName, // name
-		false, // persistent
-	) != nil {
-		fmt.Println("Error")
+	_, err = api.NewQueue(context.Background(), &pb.NewQueueRequest{
+		QueueName: qName,
+	})
+	if err != nil {
+		fmt.Println("Error", err)
 	}
 
 	// ======== Send
 	//Produce msg to owlmq
-	if api.Publish(
-		"",            // exchange
-		qName,         // routing key
-		"hello world", // content
-	) != nil {
-		fmt.Println("Error")
-	}
+	//if api.Produce(
+	//"",            // exchange
+	//qName,         // routing key
+	//"hello world", // content
+	//) != nil {
+	//fmt.Println("Error")
+	//}
 
-	// ======== RECV
-	msg, err := api.Consume(
-		qName, // queue
-	)
-	if err != nil {
-		fmt.Println("Error")
-	}
+	//// ======== RECV
+	//msg, err := api.Consume(
+	//qName, // queue name
+	//)
+	//if err != nil {
+	//fmt.Println("Error")
+	//}
 
-	//print msg
-	fmt.Println(msg)
-}
-
-// TODO get from gprc
-type Pb struct{}
-
-func (p *Pb) NewQueue(name string, persistent bool) error {
-	return nil
-}
-func (p *Pb) Publish(name string, routing_key string, content string) error {
-	return nil
-}
-func (p *Pb) Consume(queue string) (string, error) {
-	return "", nil
+	////print msg
+	//fmt.Println(msg)
 }
