@@ -86,6 +86,7 @@ message Message {
   //TODO string exchange = 3;
 }
 
+//TODO think about a way to put the queue name here and maybe not into the message
 message ProduceOneResponse {
   MESSAGE_STATUS status = 1;
 }
@@ -95,11 +96,13 @@ message ProduceResponse {
 }
 
 message ConsumeOneRequest {
-  string consumer_id = 1;
+  string queue_name = 1;
+  string consumer_group = 2;
 }
 
 message ConsumeRequest {
-  string consumer_id = 1;
+  string queue_name = 1;
+  string consumer_group = 2;
 }
 
 message AckRequest {

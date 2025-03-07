@@ -3,6 +3,7 @@ package replicator
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	pb "github.com/owlmq/owlmq/api/owlmq"
@@ -96,11 +97,25 @@ func (s *SuccessorListReplicator) TakeOverReplicas(address string) {
 	//TODO think about this (is there a way that we have the key 2 times in the ring if we just move it to our key space)
 	fmt.Println("TAKE OVER KEY SPACE:", address)
 	fmt.Println(s.replicastorage.store)
+
+	//TODO refactor to remove deprecated
+	conn, err := grpc.Dial(config.GetInstance().Hostname, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	api := pb.NewOwlmqClient(conn)
+
 	for k, v := range s.replicastorage.store {
 		fmt.Println(v.OwnerAddress)
 		if v.OwnerAddress == address {
 			fmt.Println("put replicated key into my key space")
-			s.nodeStorageLayer.Put(k, v.Value)
+			//use a PUT grpc call to transfer the key -> to only have one instance of the key
+			pr := pb.KV_PutRequest{
+				Key:   k,
+				Value: string(v.Value),
+			}
+			api.Put(context.Background(), &pr)
 		}
 	}
 }

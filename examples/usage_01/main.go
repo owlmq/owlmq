@@ -39,14 +39,17 @@ func main() {
 		fmt.Println("Error", err)
 	}
 
-	//// ======== RECV
-	//msg, err := api.Consume(
-	//qName, // queue name
-	//)
-	//if err != nil {
-	//fmt.Println("Error")
-	//}
-
-	////print msg
-	//fmt.Println(msg)
+	// ======== RECV
+	for {
+		re := pb.ConsumeOneRequest{
+			QueueName: qName,
+			//TODO ConsumerGroup: ,
+		}
+		msg, err := api.ConsumeOne(context.Background(), &re)
+		if err != nil {
+			fmt.Println("Error")
+		}
+		//print msg
+		log.Printf("Received a message: %s", msg)
+	}
 }
