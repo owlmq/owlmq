@@ -9,6 +9,7 @@ import (
 	"github.com/owlmq/owlmq/chord"
 	"github.com/owlmq/owlmq/config"
 	"github.com/owlmq/owlmq/messaging"
+	"github.com/owlmq/owlmq/queueworker"
 	"github.com/owlmq/owlmq/replicator"
 	"github.com/owlmq/owlmq/storage"
 	"github.com/owlmq/owlmq/web"
@@ -25,6 +26,9 @@ func main() {
 	c := config.New(os.Args[1])
 
 	log.Printf("[NODEID:%s]: initializing\n", c.NodeID)
+
+	//init queueworker (its a singleton)
+	queueworker.GetInstance()
 
 	//init layers
 	sl, err := storage.New(storage.InMemory)

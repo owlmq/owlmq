@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"google.golang.org/grpc"
@@ -29,27 +30,17 @@ func main() {
 	}
 
 	// ======== Send
-	//Produce msg to owlmq
-	msg := pb.Message{
-		QueueName: qName,         // queue name -> later routing key
-		Content:   "hello world", // content
-	}
-	_, err = api.ProduceOne(context.Background(), &msg)
-	if err != nil {
-		fmt.Println("Error", err)
-	}
-
-	// ======== RECV
 	for {
-		re := pb.ConsumeOneRequest{
-			QueueName: qName,
-			//TODO ConsumerGroup: ,
+
+		//Produce msg to owlmq
+		msg := pb.Message{
+			QueueName: qName,         // queue name -> later routing key
+			Content:   "hello world", // content
 		}
-		msg, err := api.ConsumeOne(context.Background(), &re)
+		_, err = api.ProduceOne(context.Background(), &msg)
 		if err != nil {
-			fmt.Println("Error")
+			fmt.Println("Error", err)
 		}
-		//print msg
-		log.Printf("Received a message: %s", msg)
+		time.Sleep(time.Second)
 	}
 }

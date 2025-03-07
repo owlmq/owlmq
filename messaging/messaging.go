@@ -20,30 +20,3 @@ func New(cl *chord.Chord) (MessagingLayer, error) {
 	//TODO maybe add different messaging layers later
 	return newSimpleMessagingLayer(cl), nil
 }
-
-type Queue struct {
-	Key   string     `json:"key"` //-> "q:logs"
-	Value QueueValue `json:"value"`
-}
-
-type QueueValue struct {
-	Subscribers []string `json:"subscribers"`
-	HeadUUID    string   `json:"headuuid"`
-	//TODO add this later(storage layer need to support this)
-	Persistent bool `json:"persistent"`
-}
-
-type Message struct {
-	Key   string //-> "m:uuid"
-	Value MessageValue
-}
-
-type MessageValue struct {
-	UUID string //-> e.g.: "12345"
-	//TODO maybe refactor to be the routing key
-	QueueName      string //-> e.g.: "logs"
-	Content        string
-	PreMessageUUID string //-> e.g.: "12345"
-	//genesis is the first msg in a queue
-	IsGenesis bool
-}

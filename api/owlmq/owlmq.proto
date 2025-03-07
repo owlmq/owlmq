@@ -69,6 +69,8 @@ service Owlmq {
   rpc ConsumeOne(ConsumeOneRequest) returns (Message);
   rpc Consume(ConsumeRequest) returns (stream Message);
   rpc NewQueue(NewQueueRequest) returns (NewQueueResponse);
+  rpc NotifyLocalConsumers(NotifyLocalConsumersRequest) returns (NotifyLocalConsumersResponse);
+  //TODO ack
   rpc Ack(AckRequest) returns (AckResponse);
 }
 //##################
@@ -94,6 +96,13 @@ message ProduceOneResponse {
 message ProduceResponse {
   MESSAGE_STATUS status = 1;
 }
+
+//TODO maybe refactor later to transmit more data, like the addresses of the consumers
+message NotifyLocalConsumersRequest {
+  string queue_name = 1;
+}
+
+message NotifyLocalConsumersResponse {}
 
 message ConsumeOneRequest {
   string queue_name = 1;

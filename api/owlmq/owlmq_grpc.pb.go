@@ -19,24 +19,25 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Owlmq_NodeJoin_FullMethodName        = "/api_owlmq.Owlmq/NodeJoin"
-	Owlmq_NodeList_FullMethodName        = "/api_owlmq.Owlmq/NodeList"
-	Owlmq_FindSuccessor_FullMethodName   = "/api_owlmq.Owlmq/FindSuccessor"
-	Owlmq_Ping_FullMethodName            = "/api_owlmq.Owlmq/Ping"
-	Owlmq_GetPredecessor_FullMethodName  = "/api_owlmq.Owlmq/GetPredecessor"
-	Owlmq_GetSuccessor_FullMethodName    = "/api_owlmq.Owlmq/GetSuccessor"
-	Owlmq_SetPredecessor_FullMethodName  = "/api_owlmq.Owlmq/SetPredecessor"
-	Owlmq_SetSuccessor_FullMethodName    = "/api_owlmq.Owlmq/SetSuccessor"
-	Owlmq_GetReplicaEntry_FullMethodName = "/api_owlmq.Owlmq/GetReplicaEntry"
-	Owlmq_PutReplicaEntry_FullMethodName = "/api_owlmq.Owlmq/PutReplicaEntry"
-	Owlmq_Get_FullMethodName             = "/api_owlmq.Owlmq/Get"
-	Owlmq_Put_FullMethodName             = "/api_owlmq.Owlmq/Put"
-	Owlmq_ProduceOne_FullMethodName      = "/api_owlmq.Owlmq/ProduceOne"
-	Owlmq_Produce_FullMethodName         = "/api_owlmq.Owlmq/Produce"
-	Owlmq_ConsumeOne_FullMethodName      = "/api_owlmq.Owlmq/ConsumeOne"
-	Owlmq_Consume_FullMethodName         = "/api_owlmq.Owlmq/Consume"
-	Owlmq_NewQueue_FullMethodName        = "/api_owlmq.Owlmq/NewQueue"
-	Owlmq_Ack_FullMethodName             = "/api_owlmq.Owlmq/Ack"
+	Owlmq_NodeJoin_FullMethodName             = "/api_owlmq.Owlmq/NodeJoin"
+	Owlmq_NodeList_FullMethodName             = "/api_owlmq.Owlmq/NodeList"
+	Owlmq_FindSuccessor_FullMethodName        = "/api_owlmq.Owlmq/FindSuccessor"
+	Owlmq_Ping_FullMethodName                 = "/api_owlmq.Owlmq/Ping"
+	Owlmq_GetPredecessor_FullMethodName       = "/api_owlmq.Owlmq/GetPredecessor"
+	Owlmq_GetSuccessor_FullMethodName         = "/api_owlmq.Owlmq/GetSuccessor"
+	Owlmq_SetPredecessor_FullMethodName       = "/api_owlmq.Owlmq/SetPredecessor"
+	Owlmq_SetSuccessor_FullMethodName         = "/api_owlmq.Owlmq/SetSuccessor"
+	Owlmq_GetReplicaEntry_FullMethodName      = "/api_owlmq.Owlmq/GetReplicaEntry"
+	Owlmq_PutReplicaEntry_FullMethodName      = "/api_owlmq.Owlmq/PutReplicaEntry"
+	Owlmq_Get_FullMethodName                  = "/api_owlmq.Owlmq/Get"
+	Owlmq_Put_FullMethodName                  = "/api_owlmq.Owlmq/Put"
+	Owlmq_ProduceOne_FullMethodName           = "/api_owlmq.Owlmq/ProduceOne"
+	Owlmq_Produce_FullMethodName              = "/api_owlmq.Owlmq/Produce"
+	Owlmq_ConsumeOne_FullMethodName           = "/api_owlmq.Owlmq/ConsumeOne"
+	Owlmq_Consume_FullMethodName              = "/api_owlmq.Owlmq/Consume"
+	Owlmq_NewQueue_FullMethodName             = "/api_owlmq.Owlmq/NewQueue"
+	Owlmq_NotifyLocalConsumers_FullMethodName = "/api_owlmq.Owlmq/NotifyLocalConsumers"
+	Owlmq_Ack_FullMethodName                  = "/api_owlmq.Owlmq/Ack"
 )
 
 // OwlmqClient is the client API for Owlmq service.
@@ -79,6 +80,8 @@ type OwlmqClient interface {
 	ConsumeOne(ctx context.Context, in *ConsumeOneRequest, opts ...grpc.CallOption) (*Message, error)
 	Consume(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Message], error)
 	NewQueue(ctx context.Context, in *NewQueueRequest, opts ...grpc.CallOption) (*NewQueueResponse, error)
+	NotifyLocalConsumers(ctx context.Context, in *NotifyLocalConsumersRequest, opts ...grpc.CallOption) (*NotifyLocalConsumersResponse, error)
+	// TODO ack
 	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
 }
 
@@ -272,6 +275,16 @@ func (c *owlmqClient) NewQueue(ctx context.Context, in *NewQueueRequest, opts ..
 	return out, nil
 }
 
+func (c *owlmqClient) NotifyLocalConsumers(ctx context.Context, in *NotifyLocalConsumersRequest, opts ...grpc.CallOption) (*NotifyLocalConsumersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NotifyLocalConsumersResponse)
+	err := c.cc.Invoke(ctx, Owlmq_NotifyLocalConsumers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *owlmqClient) Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AckResponse)
@@ -322,6 +335,8 @@ type OwlmqServer interface {
 	ConsumeOne(context.Context, *ConsumeOneRequest) (*Message, error)
 	Consume(*ConsumeRequest, grpc.ServerStreamingServer[Message]) error
 	NewQueue(context.Context, *NewQueueRequest) (*NewQueueResponse, error)
+	NotifyLocalConsumers(context.Context, *NotifyLocalConsumersRequest) (*NotifyLocalConsumersResponse, error)
+	// TODO ack
 	Ack(context.Context, *AckRequest) (*AckResponse, error)
 	mustEmbedUnimplementedOwlmqServer()
 }
@@ -383,6 +398,9 @@ func (UnimplementedOwlmqServer) Consume(*ConsumeRequest, grpc.ServerStreamingSer
 }
 func (UnimplementedOwlmqServer) NewQueue(context.Context, *NewQueueRequest) (*NewQueueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewQueue not implemented")
+}
+func (UnimplementedOwlmqServer) NotifyLocalConsumers(context.Context, *NotifyLocalConsumersRequest) (*NotifyLocalConsumersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyLocalConsumers not implemented")
 }
 func (UnimplementedOwlmqServer) Ack(context.Context, *AckRequest) (*AckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ack not implemented")
@@ -696,6 +714,24 @@ func _Owlmq_NewQueue_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Owlmq_NotifyLocalConsumers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyLocalConsumersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwlmqServer).NotifyLocalConsumers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Owlmq_NotifyLocalConsumers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwlmqServer).NotifyLocalConsumers(ctx, req.(*NotifyLocalConsumersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Owlmq_Ack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AckRequest)
 	if err := dec(in); err != nil {
@@ -780,6 +816,10 @@ var Owlmq_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewQueue",
 			Handler:    _Owlmq_NewQueue_Handler,
+		},
+		{
+			MethodName: "NotifyLocalConsumers",
+			Handler:    _Owlmq_NotifyLocalConsumers_Handler,
 		},
 		{
 			MethodName: "Ack",

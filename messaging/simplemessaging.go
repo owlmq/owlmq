@@ -10,6 +10,9 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/owlmq/owlmq/api/owlmq"
 	"github.com/owlmq/owlmq/chord"
+	"github.com/owlmq/owlmq/config"
+	"github.com/owlmq/owlmq/queueworker"
+	"github.com/owlmq/owlmq/types"
 )
 
 func newSimpleMessagingLayer(cl *chord.Chord) MessagingLayer {
@@ -25,9 +28,9 @@ type SimpleMessagingLayer struct {
 func (s *SimpleMessagingLayer) ProduceOne(ctx context.Context, msg *pb.Message) (*pb.ProduceOneResponse, error) {
 	//new message
 	mid := uuid.New().String()
-	m := Message{
+	m := types.Message{
 		Key: fmt.Sprintf("m:%s", mid),
-		Value: MessageValue{
+		Value: types.MessageValue{
 			UUID:      mid,
 			QueueName: msg.QueueName,
 			Content:   msg.Content,
@@ -47,7 +50,7 @@ func (s *SimpleMessagingLayer) ProduceOne(ctx context.Context, msg *pb.Message) 
 	if err != nil {
 		log.Printf("Error accessing the queue: %v", err)
 	}
-	var qval QueueValue
+	var qval types.QueueValue
 	_ = json.Unmarshal([]byte(qvJSON.Value), &qval)
 
 	//set the Unmarshaled headUUID as predecessor message to the new message
@@ -62,11 +65,11 @@ func (s *SimpleMessagingLayer) ProduceOne(ctx context.Context, msg *pb.Message) 
 	_, err = s.chordLayer.Put(context.Background(), &pr)
 
 	//put the new q:.. value back with the new message as new head
-	q := Queue{
+	q := types.Queue{
 		Key: pg.Key,
-		Value: QueueValue{
-			Subscribers: qval.Subscribers,
-			HeadUUID:    mid,
+		Value: types.QueueValue{
+			Consumers: qval.Consumers,
+			HeadUUID:  mid,
 			//TODO Persistent: ,
 		},
 	}
@@ -76,6 +79,10 @@ func (s *SimpleMessagingLayer) ProduceOne(ctx context.Context, msg *pb.Message) 
 		Value: string(qJSON),
 	}
 	_, err = s.chordLayer.Put(context.Background(), &pr)
+
+	//notify the consumers using the overlay network of queueworker
+	qw, _ := queueworker.GetInstance()
+	qw.NotifyConsumers(msg.QueueName)
 
 	return &pb.ProduceOneResponse{
 		Status: pb.MESSAGE_STATUS_MSG_SUCCESS,
@@ -91,7 +98,45 @@ func (s *SimpleMessagingLayer) ConsumeOne(ctx context.Context, req *pb.ConsumeOn
 }
 
 func (s *SimpleMessagingLayer) Consume(req *pb.ConsumeRequest, stream pb.Owlmq_ConsumeServer) error {
-	panic("unimplemented")
+	//add client to the consumer list
+	qw, _ := queueworker.GetInstance()
+	cid := uuid.New().String()
+	qw.AddConsumer(cid, stream)
+	fmt.Println("Subscribed consumer ", cid)
+
+	//TODO THIS IS A SYNC PROBLEM BECAUSE WE ARE READING AND WRITING IN TWO OPERATIONS
+	pg := pb.KV_GetRequest{
+		Key: fmt.Sprintf("q:%s", req.QueueName),
+	}
+	qvJSON, err := s.chordLayer.Get(context.Background(), &pg)
+	if err != nil {
+		log.Printf("Error accessing the queue: %v", err)
+	}
+	var qval types.QueueValue
+	_ = json.Unmarshal([]byte(qvJSON.Value), &qval)
+
+	//set the Unmarshaled headUUID as predecessor message to the new message
+	qval.Consumers = append(qval.Consumers, types.ConsumerEntry{
+		ConsumerUUID:      cid,
+		QueueWorkerAdress: config.GetInstance().Hostname,
+	})
+
+	//store the queue value back in the chord ring
+	retJSON, err := json.Marshal(qval)
+	pr := pb.KV_PutRequest{
+		Key:   fmt.Sprintf("q:%s", req.QueueName),
+		Value: string(retJSON),
+	}
+	_, err = s.chordLayer.Put(context.Background(), &pr)
+
+	for {
+		qw, _ := queueworker.GetInstance()
+		err := qw.CheckConsumer(cid)
+		if err != nil {
+			break
+		}
+	}
+	return nil
 }
 
 func (s *SimpleMessagingLayer) Ack(ctx context.Context, req *pb.AckRequest) (*pb.AckResponse, error) {
@@ -102,11 +147,11 @@ func (s *SimpleMessagingLayer) NewQueue(ctx context.Context, req *pb.NewQueueReq
 	//this need to be here because i need the uuid for the head of the queue
 	gid := uuid.New().String()
 
-	q := Queue{
+	q := types.Queue{
 		Key: fmt.Sprintf("q:%s", req.QueueName),
-		Value: QueueValue{
-			Subscribers: []string{},
-			HeadUUID:    gid,
+		Value: types.QueueValue{
+			Consumers: []types.ConsumerEntry{},
+			HeadUUID:  gid,
 			//TODO Persistent: ,
 		},
 	}
@@ -142,9 +187,9 @@ func (s *SimpleMessagingLayer) NewQueue(ctx context.Context, req *pb.NewQueueReq
 	}
 
 	// send an initial genisis msg to the queue
-	genesis := Message{
+	genesis := types.Message{
 		Key: fmt.Sprintf("m:%s", gid),
-		Value: MessageValue{
+		Value: types.MessageValue{
 			UUID:           gid,
 			QueueName:      q.Key,
 			Content:        "GENESIS MESSAGE",
