@@ -30,13 +30,14 @@ func main() {
 
 	// ======== Send
 	//Produce msg to owlmq
-	//if api.Produce(
-	//"",            // exchange
-	//qName,         // routing key
-	//"hello world", // content
-	//) != nil {
-	//fmt.Println("Error")
-	//}
+	msg := pb.Message{
+		QueueName: qName,         // queue name -> later routing key
+		Content:   "hello world", // content
+	}
+	_, err = api.ProduceOne(context.Background(), &msg)
+	if err != nil {
+		fmt.Println("Error", err)
+	}
 
 	//// ======== RECV
 	//msg, err := api.Consume(

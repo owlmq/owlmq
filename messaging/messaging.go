@@ -28,8 +28,9 @@ type Queue struct {
 
 type QueueValue struct {
 	Subscribers []string `json:"subscribers"`
+	HeadUUID    string   `json:"headuuid"`
 	//TODO add this later(storage layer need to support this)
-	persistent bool
+	Persistent bool `json:"persistent"`
 }
 
 type Message struct {
@@ -38,6 +39,8 @@ type Message struct {
 }
 
 type MessageValue struct {
+	UUID string //-> e.g.: "12345"
+	//TODO maybe refactor to be the routing key
 	QueueName      string //-> e.g.: "logs"
 	Content        string
 	PreMessageUUID string //-> e.g.: "12345"

@@ -81,8 +81,9 @@ enum MESSAGE_STATUS {
 
 message Message {
   //TODO think about this, could be nice so that the user can set the id -> storage location on the ring
-  string uuid = 1;
+  string queue_name = 1;
   string content = 2;
+  //TODO string exchange = 3;
 }
 
 message ProduceOneResponse {
