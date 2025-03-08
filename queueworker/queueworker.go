@@ -58,9 +58,13 @@ func (s *SimpleQueueWorker) NotifyConsumers(queuename string) {
 		log.Printf("Error accessing the queue: %v", err)
 	}
 	var qval types.QueueValue
-	_ = json.Unmarshal([]byte(qvJSON.Value), &qval)
+	err = json.Unmarshal([]byte(qvJSON.GetValue()), &qval)
+	if err != nil {
+		log.Printf("Error Unmarshal: %v", err)
+	}
 
 	fmt.Println("HERE we are NotifyConsumers")
+	fmt.Println(qvJSON.GetValue())
 	fmt.Println(qval.Consumers)
 	// iterate the nodes where consumers are connected
 	for _, v := range qval.Consumers {

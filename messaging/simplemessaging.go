@@ -51,7 +51,10 @@ func (s *SimpleMessagingLayer) ProduceOne(ctx context.Context, msg *pb.Message) 
 		log.Printf("Error accessing the queue: %v", err)
 	}
 	var qval types.QueueValue
-	_ = json.Unmarshal([]byte(qvJSON.Value), &qval)
+	err = json.Unmarshal([]byte(qvJSON.Value), &qval)
+	if err != nil {
+		log.Printf("Error Unmarshaling in ProduceOne: %v", err)
+	}
 
 	//set the Unmarshaled headUUID as predecessor message to the new message
 	m.Value.PreMessageUUID = qval.HeadUUID
@@ -73,7 +76,7 @@ func (s *SimpleMessagingLayer) ProduceOne(ctx context.Context, msg *pb.Message) 
 			//TODO Persistent: ,
 		},
 	}
-	qJSON, err := json.Marshal(qvJSON.Value)
+	qJSON, err := json.Marshal(q.Value)
 	pr = pb.KV_PutRequest{
 		Key:   q.Key,
 		Value: string(qJSON),
@@ -123,11 +126,17 @@ func (s *SimpleMessagingLayer) Consume(req *pb.ConsumeRequest, stream pb.Owlmq_C
 
 	//store the queue value back in the chord ring
 	retJSON, err := json.Marshal(qval)
+	if err != nil {
+		log.Printf("Error marshaling: %v", err)
+	}
 	pr := pb.KV_PutRequest{
 		Key:   fmt.Sprintf("q:%s", req.QueueName),
 		Value: string(retJSON),
 	}
-	_, err = s.chordLayer.Put(context.Background(), &pr)
+	ret, err := s.chordLayer.Put(context.Background(), &pr)
+	if err != nil || ret.GetStatus() != pb.KV_STATUS_KV_SUCCESS {
+		log.Printf("Error updating queue: %v", err)
+	}
 
 	for {
 		qw, _ := queueworker.GetInstance()
@@ -176,7 +185,7 @@ func (s *SimpleMessagingLayer) NewQueue(ctx context.Context, req *pb.NewQueueReq
 	}
 	pr := pb.KV_PutRequest{
 		Key:   q.Key,
-		Value: string(qvJSON),
+		Value: fmt.Sprintf("%s", qvJSON),
 	}
 	// store the new Queue on the chord ring
 	_, err = s.chordLayer.Put(context.Background(), &pr)
@@ -205,7 +214,7 @@ func (s *SimpleMessagingLayer) NewQueue(ctx context.Context, req *pb.NewQueueReq
 	}
 	gr := pb.KV_PutRequest{
 		Key:   genesis.Key,
-		Value: string(gvJSON),
+		Value: fmt.Sprintf("%s", gvJSON),
 	}
 	_, err = s.chordLayer.Put(context.Background(), &gr)
 	if err != nil {

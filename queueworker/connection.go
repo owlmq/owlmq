@@ -7,8 +7,8 @@ import (
 )
 
 func (s *SimpleQueueWorker) GetStream(consumerUUID string) (pb.Owlmq_ConsumeServer, error) {
-	//s.mu.Lock()
-	//defer s.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if value, exists := s.Consumers[consumerUUID]; exists {
 		return value, nil
@@ -18,14 +18,14 @@ func (s *SimpleQueueWorker) GetStream(consumerUUID string) (pb.Owlmq_ConsumeServ
 }
 
 func (s *SimpleQueueWorker) AddConsumer(consumerUUID string, stream pb.Owlmq_ConsumeServer) {
-	//s.mu.Lock()
-	//defer s.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.Consumers[consumerUUID] = stream
 }
 
 func (s *SimpleQueueWorker) CheckConsumer(consumerUUID string) error {
-	//s.mu.Lock()
-	//defer s.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if _, exists := s.Consumers[consumerUUID]; exists {
 		return nil
