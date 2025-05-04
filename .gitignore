@@ -1,1 +1,8 @@
 logs/
+
+### Bazel ###
+/bazel-*
+
+### Go ###
+*.out
+
