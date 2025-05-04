@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@gazelle//:def.bzl", "gazelle")
+
+gazelle(name = "gazelle")
+
+go_library(
+    name = "owlmq_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/owlmq/owlmq",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//api/owlmq",
+        "//chord",
+        "//config",
+        "//messaging",
+        "//queueworker",
+        "//replicator",
+        "//storage",
+        "//web",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//reflection",
+    ],
+)
+
+go_binary(
+    name = "owlmq",
+    embed = [":owlmq_lib"],
+    visibility = ["//visibility:public"],
+)
