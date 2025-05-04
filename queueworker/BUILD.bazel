@@ -12,6 +12,6 @@ go_library(
         "//api/owlmq",
         "//config",
         "//types",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
     ],
 )
