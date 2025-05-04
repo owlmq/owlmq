@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "storage",
+    srcs = [
+        "inmemory.go",
+        "iterator.go",
+        "storage.go",
+        "type.go",
+    ],
+    importpath = "github.com/owlmq/owlmq/storage",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "storage_test",
+    srcs = ["inmemory_test.go"],
+    deps = [":storage"],
+)

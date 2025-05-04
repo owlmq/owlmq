@@ -1,0 +1,24 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "chord",
+    srcs = [
+        "between.go",
+        "chord.go",
+        "fingertable.go",
+        "get.go",
+        "put.go",
+        "stabilize.go",
+    ],
+    importpath = "github.com/owlmq/owlmq/chord",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/owlmq",
+        "//config",
+        "//crypto",
+        "//replicator",
+        "//storage",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//credentials/insecure",
+    ],
+)

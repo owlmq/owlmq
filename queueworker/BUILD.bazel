@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "queueworker",
+    srcs = [
+        "connection.go",
+        "queueworker.go",
+    ],
+    importpath = "github.com/owlmq/owlmq/queueworker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/owlmq",
+        "//config",
+        "//types",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)

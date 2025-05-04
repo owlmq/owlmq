@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = [
+        "message.go",
+        "queue.go",
+    ],
+    importpath = "github.com/owlmq/owlmq/types",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,14 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "usage_02_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/owlmq/owlmq/examples/usage_02",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "usage_02",
+    embed = [":usage_02_lib"],
+    visibility = ["//visibility:public"],
+)

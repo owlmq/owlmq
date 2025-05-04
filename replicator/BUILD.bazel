@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "replicator",
+    srcs = [
+        "replicator.go",
+        "storage.go",
+        "successorList.go",
+    ],
+    importpath = "github.com/owlmq/owlmq/replicator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/owlmq",
+        "//config",
+        "//storage",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)

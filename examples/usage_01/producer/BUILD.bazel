@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "producer_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/owlmq/owlmq/examples/usage_01/producer",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//api/owlmq",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "producer",
+    embed = [":producer_lib"],
+    visibility = ["//visibility:public"],
+)

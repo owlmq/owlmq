@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "crypto",
+    srcs = [
+        "hash.go",
+        "password.go",
+    ],
+    importpath = "github.com/owlmq/owlmq/crypto",
+    visibility = ["//visibility:public"],
+)
