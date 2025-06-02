@@ -21,7 +21,7 @@ If you like to do some bigger changes please open an issue, so we can chat about
 
 
 ## Links
-https://pdos.csail.mit.edu/papers/ton:chord/paper-ton.pdf
-http://localhost:8080/
-https://github.com/owlmq/owlmq
-https://en.wikipedia.org/wiki/Multiversion_concurrency_control
+* https://pdos.csail.mit.edu/papers/ton:chord/paper-ton.pdf
+* http://localhost:8080/
+* https://github.com/owlmq/owlmq
+* https://en.wikipedia.org/wiki/Multiversion_concurrency_control
